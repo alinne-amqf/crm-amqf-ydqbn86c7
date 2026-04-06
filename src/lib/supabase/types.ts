@@ -329,6 +329,20 @@ export const Constants = {
 //     USING: (auth.uid() = id)
 
 // --- DATABASE FUNCTIONS ---
+// FUNCTION auto_confirm_new_users()
+//   CREATE OR REPLACE FUNCTION public.auto_confirm_new_users()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   BEGIN
+//     IF NEW.email_confirmed_at IS NULL THEN
+//       NEW.email_confirmed_at := NOW();
+//     END IF;
+//     RETURN NEW;
+//   END;
+//   $function$
+//
 // FUNCTION handle_new_user()
 //   CREATE OR REPLACE FUNCTION public.handle_new_user()
 //    RETURNS trigger

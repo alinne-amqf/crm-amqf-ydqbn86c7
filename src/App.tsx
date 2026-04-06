@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import Index from './pages/Index'
 import CustomerDetails from './pages/CustomerDetails'
 import Login from './pages/Login'
+import UpdatePassword from './pages/UpdatePassword'
 import NotFound from './pages/NotFound'
 import UsersPage from './pages/Users'
 import Layout from './components/Layout'
@@ -19,6 +20,7 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/update-password" element={<UpdatePassword />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />
