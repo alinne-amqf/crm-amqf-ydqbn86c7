@@ -21,6 +21,7 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card'
+import { UsersTab } from '@/components/settings/UsersTab'
 
 const sidebarNavItems = [
   { title: 'Geral', id: 'general' },
@@ -44,14 +45,6 @@ export default function Settings() {
     toast({
       title: 'Segurança atualizada',
       description: 'As preferências de segurança foram salvas.',
-    })
-  }
-
-  const handleSaveUsers = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast({
-      title: 'Configurações salvas',
-      description: 'As configurações de usuário foram atualizadas com sucesso.',
     })
   }
 
@@ -131,42 +124,7 @@ export default function Settings() {
             </form>
           )}
 
-          {activeTab === 'users' && (
-            <form onSubmit={handleSaveUsers}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Usuários</CardTitle>
-                  <CardDescription>Preferências padrão para novos usuários.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">Notificar novos usuários</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Envie um e-mail de boas-vindas automaticamente ao criar a conta.
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="space-y-2 pt-2">
-                    <Label htmlFor="defaultRole">Papel Padrão (Role)</Label>
-                    <Select defaultValue="Vendedor">
-                      <SelectTrigger id="defaultRole">
-                        <SelectValue placeholder="Selecione um papel" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Vendedor">Vendedor</SelectItem>
-                        <SelectItem value="Gerente">Gerente</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit">Salvar configurações</Button>
-                </CardFooter>
-              </Card>
-            </form>
-          )}
+          {activeTab === 'users' && <UsersTab />}
 
           {activeTab === 'security' && (
             <form onSubmit={handleSaveSecurity}>
