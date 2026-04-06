@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -47,6 +48,8 @@ export default function SalesPipeline() {
     estimatedValue: '',
     stage: 'Prospecção' as PipelineStage,
     customerId: '',
+    description: '',
+    expectedCloseDate: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -120,10 +123,19 @@ export default function SalesPipeline() {
         stage: newOp.stage,
         customer_id: newOp.customerId,
         user_id: user.id,
+        description: newOp.description || undefined,
+        expected_close_date: newOp.expectedCloseDate || null,
       })
       toast({ title: 'Sucesso', description: 'Oportunidade criada com sucesso.' })
       setIsDialogOpen(false)
-      setNewOp({ title: '', estimatedValue: '', stage: 'Prospecção', customerId: '' })
+      setNewOp({
+        title: '',
+        estimatedValue: '',
+        stage: 'Prospecção',
+        customerId: '',
+        description: '',
+        expectedCloseDate: '',
+      })
       fetchData()
     } catch (error) {
       toast({
@@ -149,8 +161,8 @@ export default function SalesPipeline() {
         <h2 className="text-3xl font-bold tracking-tight">Pipeline de Vendas</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Nova Oportunidade
+            <Button size="lg" className="bg-primary hover:bg-primary/90 font-semibold shadow-md">
+              <Plus className="mr-2 h-5 w-5" /> Nova Oportunidade
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -167,6 +179,7 @@ export default function SalesPipeline() {
                   onChange={(e) => setNewOp({ ...newOp, title: e.target.value })}
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="customer">Cliente</Label>
                 <Select
@@ -185,18 +198,43 @@ export default function SalesPipeline() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="value">Valor Estimado (R$)</Label>
-                <Input
-                  id="value"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  value={newOp.estimatedValue}
-                  onChange={(e) => setNewOp({ ...newOp, estimatedValue: e.target.value })}
+                <Label htmlFor="description">Descrição</Label>
+                <Textarea
+                  id="description"
+                  value={newOp.description}
+                  onChange={(e) => setNewOp({ ...newOp, description: e.target.value })}
+                  placeholder="Detalhes adicionais sobre a oportunidade..."
+                  className="resize-none"
+                  rows={2}
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="value">Valor Estimado (R$)</Label>
+                  <Input
+                    id="value"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    required
+                    value={newOp.estimatedValue}
+                    onChange={(e) => setNewOp({ ...newOp, estimatedValue: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expectedCloseDate">Data de Fechamento</Label>
+                  <Input
+                    id="expectedCloseDate"
+                    type="date"
+                    value={newOp.expectedCloseDate}
+                    onChange={(e) => setNewOp({ ...newOp, expectedCloseDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="stage">Estágio Inicial</Label>
                 <Select
@@ -215,6 +253,7 @@ export default function SalesPipeline() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={isSubmitting || !newOp.customerId}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

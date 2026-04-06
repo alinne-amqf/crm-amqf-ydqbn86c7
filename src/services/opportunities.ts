@@ -37,6 +37,8 @@ export const opportunitiesService = {
     stage: PipelineStage
     customer_id: string
     user_id: string
+    description?: string
+    expected_close_date?: string | null
   }) {
     const { error } = await supabase.from('opportunities' as any).insert([data])
 

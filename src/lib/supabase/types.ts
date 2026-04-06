@@ -92,6 +92,50 @@ export type Database = {
           },
         ]
       }
+      opportunities: {
+        Row: {
+          created_at: string
+          customer_id: string
+          estimated_value: number
+          expected_close_date: string | null
+          id: string
+          stage: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          estimated_value?: number
+          expected_close_date?: string | null
+          id?: string
+          stage: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          estimated_value?: number
+          expected_close_date?: string | null
+          id?: string
+          stage?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'opportunities_customer_id_fkey'
+            columns: ['customer_id']
+            isOneToOne: false
+            referencedRelation: 'customers'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -289,6 +333,16 @@ export const Constants = {
 //   date: timestamp with time zone (not null, default: now())
 //   description: text (not null)
 //   created_at: timestamp with time zone (not null, default: now())
+// Table: opportunities
+//   id: uuid (not null, default: gen_random_uuid())
+//   title: text (not null)
+//   estimated_value: numeric (not null, default: 0)
+//   stage: text (not null)
+//   expected_close_date: date (nullable)
+//   customer_id: uuid (not null)
+//   user_id: uuid (not null)
+//   created_at: timestamp with time zone (not null, default: now())
+//   updated_at: timestamp with time zone (not null, default: now())
 // Table: profiles
 //   id: uuid (not null)
 //   email: text (not null)
@@ -305,6 +359,10 @@ export const Constants = {
 //   FOREIGN KEY interactions_customer_id_fkey: FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
 //   PRIMARY KEY interactions_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY interactions_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+// Table: opportunities
+//   FOREIGN KEY opportunities_customer_id_fkey: FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+//   PRIMARY KEY opportunities_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY opportunities_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 // Table: profiles
 //   FOREIGN KEY profiles_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY profiles_pkey: PRIMARY KEY (id)
@@ -327,6 +385,15 @@ export const Constants = {
 //   Policy "Interactions select policy" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['Admin'::user_role, 'Gerente'::user_role]))))))
 //   Policy "Interactions update policy" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['Admin'::user_role, 'Gerente'::user_role]))))))
+// Table: opportunities
+//   Policy "Opportunities delete policy" (DELETE, PERMISSIVE) roles={authenticated}
+//     USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['Admin'::user_role, 'Gerente'::user_role]))))))
+//   Policy "Opportunities insert policy" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: (user_id = auth.uid())
+//   Policy "Opportunities select policy" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['Admin'::user_role, 'Gerente'::user_role]))))))
+//   Policy "Opportunities update policy" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['Admin'::user_role, 'Gerente'::user_role]))))))
 // Table: profiles
 //   Policy "Admins can update all profiles" (UPDATE, PERMISSIVE) roles={authenticated}
