@@ -10,6 +10,7 @@ import {
   LayoutList,
   Loader2,
   Check,
+  Pencil,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -54,6 +55,7 @@ export default function TasksPage() {
   const [newTaskDate, setNewTaskDate] = useState('')
   const [newTaskType, setNewTaskType] = useState<Task['type']>('call')
   const [newTaskCustomerId, setNewTaskCustomerId] = useState('')
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -77,36 +79,66 @@ export default function TasksPage() {
     }
   }
 
-  const handleCreateTask = async () => {
+  const handleSaveTask = async () => {
     if (!newTaskTitle || !newTaskDate || !newTaskCustomerId) return
     try {
       setIsSubmitting(true)
-      const newTask = await createTask({
+
+      const taskData = {
         title: newTaskTitle,
         due_date: new Date(newTaskDate).toISOString(),
         type: newTaskType,
         customer_id: newTaskCustomerId,
-        status: 'pending',
-      })
+      }
+
+      let savedTask: Task
+
+      if (editingTask) {
+        savedTask = await updateTask(editingTask.id, taskData)
+        toast.success('Tarefa atualizada com sucesso!')
+      } else {
+        savedTask = await createTask({
+          ...taskData,
+          status: 'pending',
+        })
+        toast.success('Tarefa criada com sucesso!')
+      }
 
       const customer = customers.find((c) => c.id === newTaskCustomerId)
       if (customer) {
-        newTask.customers = { name: customer.name, company: customer.company }
+        savedTask.customers = { name: customer.name, company: customer.company }
       }
 
-      setTasks((prev) =>
-        [...prev, newTask].sort(
-          (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime(),
-        ),
-      )
+      if (editingTask) {
+        setTasks((prev) =>
+          prev
+            .map((t) => (t.id === editingTask.id ? savedTask : t))
+            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()),
+        )
+      } else {
+        setTasks((prev) =>
+          [...prev, savedTask].sort(
+            (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime(),
+          ),
+        )
+      }
+
       setIsDialogOpen(false)
       resetForm()
-      toast.success('Tarefa criada com sucesso!')
     } catch (error: any) {
-      toast.error('Erro ao criar tarefa', { description: error.message })
+      toast.error('Erro ao salvar tarefa', { description: error.message })
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task)
+    setNewTaskTitle(task.title)
+    setNewTaskDate(format(new Date(task.due_date), "yyyy-MM-dd'T'HH:mm"))
+    setNewTaskType(task.type)
+    setNewTaskCustomerId(task.customer_id)
+    setIsDialogOpen(true)
   }
 
   const resetForm = () => {
@@ -114,6 +146,7 @@ export default function TasksPage() {
     setNewTaskDate('')
     setNewTaskType('call')
     setNewTaskCustomerId('')
+    setEditingTask(null)
   }
 
   const handleToggleStatus = async (task: Task) => {
@@ -193,6 +226,10 @@ export default function TasksPage() {
           <DropdownMenuItem onClick={() => handleToggleStatus(task)}>
             <Check className="mr-2 h-4 w-4" />
             {task.status === 'pending' ? 'Marcar concluída' : 'Marcar pendente'}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleEditTask(task)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Editar tarefa
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleDeleteTask(task.id)} className="text-red-600">
             <Trash2 className="mr-2 h-4 w-4" />
@@ -280,10 +317,16 @@ export default function TasksPage() {
         </Tabs>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open)
+          if (!open) resetForm()
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Nova Tarefa</DialogTitle>
+            <DialogTitle>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -343,11 +386,11 @@ export default function TasksPage() {
               Cancelar
             </Button>
             <Button
-              onClick={handleCreateTask}
+              onClick={handleSaveTask}
               disabled={!newTaskTitle || !newTaskDate || !newTaskCustomerId || isSubmitting}
             >
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Salvar Tarefa
+              {editingTask ? 'Atualizar Tarefa' : 'Salvar Tarefa'}
             </Button>
           </DialogFooter>
         </DialogContent>
