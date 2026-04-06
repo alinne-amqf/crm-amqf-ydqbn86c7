@@ -329,11 +329,11 @@ export const Constants = {
 //   Policy "Interactions update policy" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['Admin'::user_role, 'Gerente'::user_role]))))))
 // Table: profiles
-//   Policy "Admins can read all profiles" (SELECT, PERMISSIVE) roles={authenticated}
-//     USING: (EXISTS ( SELECT 1    FROM profiles p   WHERE ((p.id = auth.uid()) AND (p.role = 'Admin'::user_role))))
 //   Policy "Admins can update all profiles" (UPDATE, PERMISSIVE) roles={authenticated}
-//     USING: (EXISTS ( SELECT 1    FROM profiles p   WHERE ((p.id = auth.uid()) AND (p.role = 'Admin'::user_role))))
-//   Policy "Users can read own profile" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: (( SELECT profiles_1.role    FROM profiles profiles_1   WHERE (profiles_1.id = auth.uid())) = 'Admin'::user_role)
+//   Policy "Enable read access for all authenticated users" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "Users can update own profile" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: (auth.uid() = id)
 
 // --- DATABASE FUNCTIONS ---

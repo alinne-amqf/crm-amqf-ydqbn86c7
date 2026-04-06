@@ -10,6 +10,7 @@ import Login from './pages/Login'
 import UpdatePassword from './pages/UpdatePassword'
 import NotFound from './pages/NotFound'
 import UsersPage from './pages/Users'
+import SalesPipeline from './pages/SalesPipeline'
 import Layout from './components/Layout'
 
 const App = () => (
@@ -26,6 +27,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/customer/:id" element={<CustomerDetails />} />
               <Route path="/usuarios" element={<UsersPage />} />
+              <Route path="/vendas" element={<SalesPipeline />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />

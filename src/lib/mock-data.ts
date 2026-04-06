@@ -1,4 +1,47 @@
-import { Customer, Interaction } from './types'
+import { Customer, Interaction, Opportunity } from './types'
+
+export const mockOpportunities: Opportunity[] = [
+  {
+    id: 'op-1',
+    title: 'Licença Anual - Plano Enterprise',
+    estimatedValue: 15000,
+    customerName: 'TechCorp',
+    stage: 'Qualificação',
+    createdAt: '2023-10-02T10:00:00Z',
+  },
+  {
+    id: 'op-2',
+    title: 'Consultoria de Implantação',
+    estimatedValue: 5000,
+    customerName: 'Inovação TI',
+    stage: 'Proposta',
+    createdAt: '2023-10-06T14:30:00Z',
+  },
+  {
+    id: 'op-3',
+    title: 'Renovação de Contrato 2024',
+    estimatedValue: 12000,
+    customerName: 'Varejo Plus',
+    stage: 'Negociação',
+    createdAt: '2023-10-11T09:15:00Z',
+  },
+  {
+    id: 'op-4',
+    title: 'Pacote de Treinamento',
+    estimatedValue: 3500,
+    customerName: 'Startup Alpha',
+    stage: 'Prospecção',
+    createdAt: '2023-10-13T16:20:00Z',
+  },
+  {
+    id: 'op-5',
+    title: 'Projeto Customizado',
+    estimatedValue: 25000,
+    customerName: 'Construtora Base',
+    stage: 'Fechado/Ganho',
+    createdAt: '2023-08-20T08:30:00Z',
+  },
+]
 
 export const mockCustomers: Customer[] = [
   {

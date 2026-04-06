@@ -31,3 +31,20 @@ export interface Interaction {
   description: string
   createdAt: string
 }
+
+export type PipelineStage =
+  | 'Prospecção'
+  | 'Qualificação'
+  | 'Proposta'
+  | 'Negociação'
+  | 'Fechado/Ganho'
+  | 'Fechado/Perdido'
+
+export interface Opportunity {
+  id: string
+  title: string
+  estimatedValue: number
+  customerName: string
+  stage: PipelineStage
+  createdAt: string
+}
