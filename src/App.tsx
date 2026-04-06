@@ -8,6 +8,7 @@ import Index from './pages/Index'
 import CustomerDetails from './pages/CustomerDetails'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
+import UsersPage from './pages/Users'
 import Layout from './components/Layout'
 
 const App = () => (
@@ -22,6 +23,7 @@ const App = () => (
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />
               <Route path="/customer/:id" element={<CustomerDetails />} />
+              <Route path="/usuarios" element={<UsersPage />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />

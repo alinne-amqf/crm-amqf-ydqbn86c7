@@ -1,21 +1,31 @@
-export type CustomerStatus = 'Ativo' | 'Lead' | 'Inativo'
-export type InteractionType = 'email' | 'call' | 'meeting' | 'note'
+export type UserRole = 'Admin' | 'Gerente' | 'Vendedor'
+
+export interface Profile {
+  id: string
+  email: string
+  name: string | null
+  role: UserRole
+  createdAt: string
+  updatedAt: string
+}
 
 export interface Customer {
   id: string
   name: string
   email: string
-  phone: string
-  company: string
-  status: CustomerStatus
-  avatar?: string
+  phone: string | null
+  company: string | null
+  status: string
+  avatar: string | null
   createdAt: string
 }
 
 export interface Interaction {
   id: string
   customerId: string
-  type: InteractionType
+  userId: string
+  type: string
   date: string
   description: string
+  createdAt: string
 }

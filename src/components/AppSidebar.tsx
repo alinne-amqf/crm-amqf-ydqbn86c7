@@ -1,5 +1,13 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Briefcase, BarChart3, Settings, LifeBuoy } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  BarChart3,
+  Settings,
+  LifeBuoy,
+  Shield,
+} from 'lucide-react'
 
 import {
   Sidebar,
@@ -13,17 +21,20 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-
-const navItems = [
-  { title: 'Dashboard', icon: LayoutDashboard, url: '/dashboard' },
-  { title: 'Clientes', icon: Users, url: '/' },
-  { title: 'Vendas', icon: Briefcase, url: '/vendas' },
-  { title: 'Relatórios', icon: BarChart3, url: '/relatorios' },
-  { title: 'Configurações', icon: Settings, url: '/configuracoes' },
-]
+import { useAuth } from '@/hooks/use-auth'
 
 export function AppSidebar() {
   const location = useLocation()
+  const { profile } = useAuth()
+
+  const navItems = [
+    { title: 'Dashboard', icon: LayoutDashboard, url: '/dashboard' },
+    { title: 'Clientes', icon: Users, url: '/' },
+    { title: 'Vendas', icon: Briefcase, url: '/vendas' },
+    { title: 'Relatórios', icon: BarChart3, url: '/relatorios' },
+    ...(profile?.role === 'Admin' ? [{ title: 'Usuários', icon: Shield, url: '/usuarios' }] : []),
+    { title: 'Configurações', icon: Settings, url: '/configuracoes' },
+  ]
 
   return (
     <Sidebar variant="inset">
@@ -60,12 +71,15 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 border-t border-border/50">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarImage src="https://img.usecurling.com/ppl/thumbnail?gender=male&seed=99" />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarImage
+              src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`}
+            />
+            <AvatarFallback>{profile?.name?.charAt(0) || 'U'}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-medium truncate">João Diretor</span>
-            <span className="text-xs text-muted-foreground truncate">joao@crmnexus.com</span>
+            <span className="text-sm font-medium truncate">{profile?.name || 'Usuário'}</span>
+            <span className="text-xs text-muted-foreground truncate">{profile?.email}</span>
+            <span className="text-[10px] text-primary font-medium">{profile?.role}</span>
           </div>
         </div>
       </SidebarFooter>
