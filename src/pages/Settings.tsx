@@ -22,6 +22,8 @@ import {
   CardFooter,
 } from '@/components/ui/card'
 import { UsersTab } from '@/components/settings/UsersTab'
+import { getSystemSettings, updateSystemSettings, SystemSettings } from '@/services/systemSettings'
+import { Loader2 } from 'lucide-react'
 
 const sidebarNavItems = [
   { title: 'Geral', id: 'general' },
@@ -31,13 +33,58 @@ const sidebarNavItems = [
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general')
+  const [settings, setSettings] = useState<SystemSettings | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
-  const handleSaveGeneral = (e: React.FormEvent) => {
+  // Form states
+  const [systemName, setSystemName] = useState('CRM AMQF')
+  const [timezone, setTimezone] = useState('america-sao_paulo')
+  const [language, setLanguage] = useState('pt-BR')
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await getSystemSettings()
+        if (data) {
+          setSettings(data)
+          setSystemName(data.system_name)
+          setTimezone(data.timezone)
+          setLanguage(data.language)
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchSettings()
+  }, [])
+
+  const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast({
-      title: 'Configurações salvas',
-      description: 'As configurações gerais foram atualizadas com sucesso.',
-    })
+    if (!settings) return
+
+    setIsSaving(true)
+    try {
+      await updateSystemSettings(settings.id, {
+        system_name: systemName,
+        timezone,
+        language,
+      })
+      toast({
+        title: 'Configurações salvas',
+        description: 'As configurações gerais foram atualizadas com sucesso.',
+      })
+    } catch (error) {
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Ocorreu um erro ao atualizar as configurações.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleSaveSecurity = (e: React.FormEvent) => {
@@ -86,39 +133,56 @@ export default function Settings() {
                   <CardDescription>Configurações básicas do sistema.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="systemName">Nome do Sistema</Label>
-                    <Input id="systemName" defaultValue="CRM AMQF" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timezone">Fuso Horário</Label>
-                    <Select defaultValue="america-sao_paulo">
-                      <SelectTrigger id="timezone">
-                        <SelectValue placeholder="Selecione um fuso horário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="america-sao_paulo">America/Sao_Paulo (BRT)</SelectItem>
-                        <SelectItem value="america-new_york">America/New_York (EST)</SelectItem>
-                        <SelectItem value="europe-london">Europe/London (GMT)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="language">Idioma</Label>
-                    <Select defaultValue="pt-BR">
-                      <SelectTrigger id="language">
-                        <SelectValue placeholder="Selecione um idioma" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
-                        <SelectItem value="en-US">English (US)</SelectItem>
-                        <SelectItem value="es-ES">Español</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {isLoading ? (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="systemName">Nome do Sistema</Label>
+                        <Input
+                          id="systemName"
+                          value={systemName}
+                          onChange={(e) => setSystemName(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="timezone">Fuso Horário</Label>
+                        <Select value={timezone} onValueChange={setTimezone}>
+                          <SelectTrigger id="timezone">
+                            <SelectValue placeholder="Selecione um fuso horário" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="america-sao_paulo">
+                              America/Sao_Paulo (BRT)
+                            </SelectItem>
+                            <SelectItem value="america-new_york">America/New_York (EST)</SelectItem>
+                            <SelectItem value="europe-london">Europe/London (GMT)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="language">Idioma</Label>
+                        <Select value={language} onValueChange={setLanguage}>
+                          <SelectTrigger id="language">
+                            <SelectValue placeholder="Selecione um idioma" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
+                            <SelectItem value="en-US">English (US)</SelectItem>
+                            <SelectItem value="es-ES">Español</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit">Salvar alterações</Button>
+                  <Button type="submit" disabled={isLoading || isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Salvar alterações
+                  </Button>
                 </CardFooter>
               </Card>
             </form>
