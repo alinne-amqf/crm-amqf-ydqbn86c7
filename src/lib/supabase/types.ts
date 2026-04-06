@@ -14,6 +14,8 @@ export type Database = {
           avatar: string | null
           company: string | null
           created_at: string
+          customer_type: string
+          document: string | null
           email: string
           id: string
           name: string
@@ -26,6 +28,8 @@ export type Database = {
           avatar?: string | null
           company?: string | null
           created_at?: string
+          customer_type?: string
+          document?: string | null
           email: string
           id?: string
           name: string
@@ -38,6 +42,8 @@ export type Database = {
           avatar?: string | null
           company?: string | null
           created_at?: string
+          customer_type?: string
+          document?: string | null
           email?: string
           id?: string
           name?: string
@@ -273,6 +279,8 @@ export const Constants = {
 //   avatar: text (nullable)
 //   created_at: timestamp with time zone (not null, default: now())
 //   updated_at: timestamp with time zone (not null, default: now())
+//   customer_type: text (not null, default: 'B2C'::text)
+//   document: text (nullable)
 // Table: interactions
 //   id: uuid (not null, default: gen_random_uuid())
 //   customer_id: uuid (not null)
