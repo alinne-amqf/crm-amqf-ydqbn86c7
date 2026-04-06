@@ -45,6 +45,8 @@ export interface Opportunity {
   title: string
   estimatedValue: number
   customerName: string
+  customerId?: string
+  userId?: string
   stage: PipelineStage
   createdAt: string
 }
