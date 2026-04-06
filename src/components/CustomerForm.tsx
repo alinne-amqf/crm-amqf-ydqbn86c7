@@ -26,7 +26,7 @@ const customerSchema = z.object({
 type CustomerFormValues = z.infer<typeof customerSchema>
 
 interface CustomerFormProps {
-  onSubmit: (customer: Omit<Customer, 'id' | 'createdAt'>) => void
+  onSubmit: (customer: Omit<Customer, 'id' | 'createdAt'>) => Promise<void> | void
   onCancel: () => void
 }
 
@@ -45,16 +45,15 @@ export function CustomerForm({ onSubmit, onCancel }: CustomerFormProps) {
 
   const handleSubmit = async (values: CustomerFormValues) => {
     setIsSubmitting(true)
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    onSubmit({
-      ...values,
-      status: 'Lead',
-      avatar: `https://img.usecurling.com/ppl/thumbnail?seed=${Math.floor(Math.random() * 1000)}`,
-    })
-
-    setIsSubmitting(false)
+    try {
+      await onSubmit({
+        ...values,
+        status: 'Lead',
+        avatar: `https://img.usecurling.com/ppl/thumbnail?seed=${Math.floor(Math.random() * 1000)}`,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

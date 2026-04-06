@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus,
@@ -9,6 +9,8 @@ import {
   Phone,
   Building,
   InboxIcon,
+  Loader2,
+  LogOut,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -39,13 +41,32 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { CustomerForm } from '@/components/CustomerForm'
 import { Customer } from '@/lib/types'
-import { mockCustomers } from '@/lib/mock-data'
+import { getCustomers, createCustomer } from '@/services/customers'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
   const navigate = useNavigate()
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers)
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const { signOut } = useAuth()
+
+  useEffect(() => {
+    fetchCustomers()
+  }, [])
+
+  const fetchCustomers = async () => {
+    try {
+      setIsLoading(true)
+      const data = await getCustomers()
+      setCustomers(data)
+    } catch (error: any) {
+      toast.error('Erro ao buscar clientes', { description: error.message })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const filteredCustomers = useMemo(() => {
     if (!searchQuery.trim()) return customers
@@ -58,18 +79,21 @@ export default function Index() {
     )
   }, [customers, searchQuery])
 
-  const handleAddCustomer = (newCustomerData: Omit<Customer, 'id' | 'createdAt'>) => {
-    const newCustomer: Customer = {
-      ...newCustomerData,
-      id: Math.random().toString(36).substring(7),
-      createdAt: new Date().toISOString(),
+  const handleAddCustomer = async (newCustomerData: Omit<Customer, 'id' | 'createdAt'>) => {
+    try {
+      const newCustomer = await createCustomer(newCustomerData)
+      setCustomers((prev) => [newCustomer, ...prev])
+      setIsSheetOpen(false)
+      toast.success('Cliente cadastrado com sucesso!', {
+        description: `${newCustomer.name} foi adicionado à sua base de clientes.`,
+      })
+    } catch (error: any) {
+      toast.error('Erro ao criar cliente', { description: error.message })
     }
+  }
 
-    setCustomers((prev) => [newCustomer, ...prev])
-    setIsSheetOpen(false)
-    toast.success('Cliente cadastrado com sucesso!', {
-      description: `${newCustomer.name} foi adicionado à sua base de clientes.`,
-    })
+  const handleLogout = async () => {
+    await signOut()
   }
 
   const getStatusColor = (status: Customer['status']) => {
@@ -92,10 +116,16 @@ export default function Index() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h1>
           <p className="text-muted-foreground mt-1">Gerencie sua base de clientes e leads.</p>
         </div>
-        <Button onClick={() => setIsSheetOpen(true)} className="shadow-sm">
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleLogout} className="shadow-sm">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
+          <Button onClick={() => setIsSheetOpen(true)} className="shadow-sm">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
@@ -126,7 +156,16 @@ export default function Index() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCustomers.length > 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-48 text-center">
+                  <div className="flex flex-col items-center justify-center text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                    <p>Carregando clientes...</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredCustomers.length > 0 ? (
               filteredCustomers.map((customer) => (
                 <TableRow
                   key={customer.id}

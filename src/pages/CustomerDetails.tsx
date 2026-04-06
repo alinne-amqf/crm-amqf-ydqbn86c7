@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -9,21 +10,88 @@ import {
   FileText,
   Users,
   MailCheck,
+  Loader2,
+  PlusCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { mockCustomers, mockInteractions } from '@/lib/mock-data'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { toast } from 'sonner'
+import { Customer, Interaction } from '@/lib/types'
+import { getCustomerById } from '@/services/customers'
+import { getInteractionsByCustomer, createInteraction } from '@/services/interactions'
 
 export default function CustomerDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const customer = mockCustomers.find((c) => c.id === id)
-  const interactions = mockInteractions
-    .filter((i) => i.customerId === id)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const [customer, setCustomer] = useState<Customer | null>(null)
+  const [interactions, setInteractions] = useState<Interaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isAddingInteraction, setIsAddingInteraction] = useState(false)
+  const [newInteractionType, setNewInteractionType] = useState<Interaction['type']>('note')
+  const [newInteractionDesc, setNewInteractionDesc] = useState('')
+  const [isSubmittingInteraction, setIsSubmittingInteraction] = useState(false)
+
+  useEffect(() => {
+    if (id) {
+      fetchData()
+    }
+  }, [id])
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [customerData, interactionsData] = await Promise.all([
+        getCustomerById(id!),
+        getInteractionsByCustomer(id!),
+      ])
+      setCustomer(customerData)
+      setInteractions(interactionsData)
+    } catch (error: any) {
+      toast.error('Erro ao carregar detalhes', { description: error.message })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddInteraction = async () => {
+    if (!newInteractionDesc.trim() || !id) return
+    try {
+      setIsSubmittingInteraction(true)
+      const newInteraction = await createInteraction({
+        customerId: id,
+        type: newInteractionType,
+        date: new Date().toISOString(),
+        description: newInteractionDesc,
+      })
+      setInteractions([newInteraction, ...interactions])
+      setNewInteractionDesc('')
+      setIsAddingInteraction(false)
+      toast.success('Interação registrada com sucesso!')
+    } catch (error: any) {
+      toast.error('Erro ao adicionar interação', { description: error.message })
+    } finally {
+      setIsSubmittingInteraction(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   if (!customer) {
     return (
@@ -178,14 +246,65 @@ export default function CustomerDetails() {
         {/* Interaction History */}
         <div className="w-full lg:w-2/3 space-y-6">
           <Card className="border-slate-200 shadow-sm h-full lg:min-h-[500px]">
-            <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4 flex flex-row items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
                 Histórico de Interações
               </CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsAddingInteraction(!isAddingInteraction)}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Nova Interação
+              </Button>
             </CardHeader>
-            <CardContent className="pt-8 px-6 sm:px-8">
+            <CardContent className="pt-6 px-6 sm:px-8">
+              {isAddingInteraction && (
+                <div className="mb-8 p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-4 animate-fade-in-down">
+                  <h4 className="font-medium text-sm text-slate-800">Registrar nova interação</h4>
+                  <div className="flex gap-4">
+                    <Select
+                      value={newInteractionType}
+                      onValueChange={(v: any) => setNewInteractionType(v)}
+                    >
+                      <SelectTrigger className="w-[180px] bg-white">
+                        <SelectValue placeholder="Tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="note">Anotação</SelectItem>
+                        <SelectItem value="call">Ligação</SelectItem>
+                        <SelectItem value="email">E-mail</SelectItem>
+                        <SelectItem value="meeting">Reunião</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Textarea
+                    placeholder="Descreva a interação..."
+                    value={newInteractionDesc}
+                    onChange={(e) => setNewInteractionDesc(e.target.value)}
+                    className="min-h-[100px] bg-white"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setIsAddingInteraction(false)}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleAddInteraction}
+                      disabled={!newInteractionDesc.trim() || isSubmittingInteraction}
+                    >
+                      {isSubmittingInteraction ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {interactions.length > 0 ? (
-                <div className="relative border-l-2 border-slate-100 ml-4 space-y-10 pb-4">
+                <div className="relative border-l-2 border-slate-100 ml-4 space-y-10 pb-4 pt-2">
                   {interactions.map((interaction) => (
                     <div key={interaction.id} className="relative pl-6 sm:pl-8 group">
                       <div className="absolute -left-[17px] top-1 bg-white p-2 rounded-full border border-slate-200 shadow-sm group-hover:border-primary/50 group-hover:shadow-md transition-all">
