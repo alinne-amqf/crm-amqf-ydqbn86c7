@@ -4,7 +4,6 @@ import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { AdminRoute } from '@/components/AdminRoute'
 import Index from './pages/Index'
 import CustomerDetails from './pages/CustomerDetails'
 import Login from './pages/Login'
@@ -32,9 +31,7 @@ const App = () => (
               <Route path="/customer/:id" element={<CustomerDetails />} />
               <Route path="/vendas" element={<SalesPipeline />} />
               <Route path="/tarefas" element={<TasksPage />} />
-              <Route element={<AdminRoute />}>
-                <Route path="/configuracoes" element={<Settings />} />
-              </Route>
+              <Route path="/settings" element={<Settings />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
