@@ -166,6 +166,30 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          id: string
+          language: string
+          system_name: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          language?: string
+          system_name?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          language?: string
+          system_name?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           created_at: string
@@ -401,6 +425,12 @@ export const Constants = {
 //   role: user_role (not null, default: 'Vendedor'::user_role)
 //   created_at: timestamp with time zone (not null, default: now())
 //   updated_at: timestamp with time zone (not null, default: now())
+// Table: system_settings
+//   id: uuid (not null, default: gen_random_uuid())
+//   system_name: text (not null, default: 'CRM AMQF'::text)
+//   timezone: text (not null, default: 'america-sao_paulo'::text)
+//   language: text (not null, default: 'pt-BR'::text)
+//   updated_at: timestamp with time zone (not null, default: now())
 // Table: tasks
 //   id: uuid (not null, default: gen_random_uuid())
 //   title: text (not null)
@@ -428,6 +458,8 @@ export const Constants = {
 // Table: profiles
 //   FOREIGN KEY profiles_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY profiles_pkey: PRIMARY KEY (id)
+// Table: system_settings
+//   PRIMARY KEY system_settings_pkey: PRIMARY KEY (id)
 // Table: tasks
 //   FOREIGN KEY tasks_customer_id_fkey: FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
 //   PRIMARY KEY tasks_pkey: PRIMARY KEY (id)
@@ -468,6 +500,12 @@ export const Constants = {
 //     USING: true
 //   Policy "Users can update own profile" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: (auth.uid() = id)
+// Table: system_settings
+//   Policy "Admins can update system settings" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'Admin'::user_role))))
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'Admin'::user_role))))
+//   Policy "Enable read access for all authenticated users" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: tasks
 //   Policy "Tasks delete policy" (DELETE, PERMISSIVE) roles={authenticated}
 //     USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['Admin'::user_role, 'Gerente'::user_role]))))))
