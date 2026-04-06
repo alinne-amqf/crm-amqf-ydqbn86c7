@@ -68,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (isMounted) {
           if (data) {
+            console.log('[useAuth] Perfil retornado do Supabase:', data)
             setProfile({
               id: data.id,
               email: data.email,

@@ -17,7 +17,7 @@ export const AdminRoute = () => {
     return <Navigate to="/login" replace />
   }
 
-  if (profile?.role !== 'Admin') {
+  if (profile?.role?.toLowerCase() !== 'admin') {
     return <Navigate to="/" replace />
   }
 

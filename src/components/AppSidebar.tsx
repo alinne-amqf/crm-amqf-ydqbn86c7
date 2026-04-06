@@ -34,7 +34,7 @@ export function AppSidebar() {
     { title: 'Vendas', icon: Briefcase, url: '/vendas' },
     { title: 'Tarefas', icon: ListTodo, url: '/tarefas' },
     { title: 'Relatórios', icon: BarChart3, url: '/relatorios' },
-    ...(profile?.role === 'Admin'
+    ...(profile?.role?.toLowerCase() === 'admin'
       ? [{ title: 'Configurações', icon: Settings, url: '/configuracoes' }]
       : []),
   ]
