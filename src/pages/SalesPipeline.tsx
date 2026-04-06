@@ -36,7 +36,7 @@ const STAGES: PipelineStage[] = [
 ]
 
 export default function SalesPipeline() {
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([])
+  const [opportunities, setOpportunities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [customers, setCustomers] = useState<
     { id: string; name: string; customerType?: string; company?: string | null }[]
@@ -46,7 +46,8 @@ export default function SalesPipeline() {
   const { user } = useAuth()
 
   // Form state
-  const [newOp, setNewOp] = useState({
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formData, setFormData] = useState({
     title: '',
     estimatedValue: '',
     stage: 'Prospecção' as PipelineStage,
@@ -115,35 +116,85 @@ export default function SalesPipeline() {
     }
   }
 
-  const handleCreateOpportunity = async (e: React.FormEvent) => {
+  const handleNew = () => {
+    setEditingId(null)
+    setFormData({
+      title: '',
+      estimatedValue: '',
+      stage: 'Prospecção',
+      customerId: '',
+      description: '',
+      expectedCloseDate: '',
+    })
+  }
+
+  const handleEdit = (op: any) => {
+    setEditingId(op.id)
+    setFormData({
+      title: op.title,
+      estimatedValue: op.estimatedValue
+        ? new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          }).format(op.estimatedValue)
+        : '',
+      stage: op.stage,
+      customerId: op.customerId,
+      description: op.description || '',
+      expectedCloseDate: op.expectedCloseDate || '',
+    })
+    setIsDialogOpen(true)
+  }
+
+  const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '')
+    if (!value) {
+      setFormData((prev) => ({ ...prev, estimatedValue: '' }))
+      return
+    }
+    const numValue = Number(value) / 100
+    setFormData((prev) => ({
+      ...prev,
+      estimatedValue: new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(numValue),
+    }))
+  }
+
+  const handleSaveOpportunity = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
     setIsSubmitting(true)
+
+    const numericValue = Number(formData.estimatedValue.replace(/\D/g, '')) / 100
+
+    const payload = {
+      title: formData.title,
+      estimated_value: numericValue,
+      stage: formData.stage,
+      customer_id: formData.customerId,
+      description: formData.description || undefined,
+      expected_close_date: formData.expectedCloseDate || null,
+    }
+
     try {
-      await opportunitiesService.create({
-        title: newOp.title,
-        estimated_value: Number(newOp.estimatedValue),
-        stage: newOp.stage,
-        customer_id: newOp.customerId,
-        user_id: user.id,
-        description: newOp.description || undefined,
-        expected_close_date: newOp.expectedCloseDate || null,
-      })
-      toast({ title: 'Sucesso', description: 'Oportunidade criada com sucesso.' })
+      if (editingId) {
+        await opportunitiesService.update(editingId, payload)
+        toast({ title: 'Sucesso', description: 'Oportunidade atualizada com sucesso.' })
+      } else {
+        await opportunitiesService.create({
+          ...payload,
+          user_id: user.id,
+        })
+        toast({ title: 'Sucesso', description: 'Oportunidade criada com sucesso.' })
+      }
       setIsDialogOpen(false)
-      setNewOp({
-        title: '',
-        estimatedValue: '',
-        stage: 'Prospecção',
-        customerId: '',
-        description: '',
-        expectedCloseDate: '',
-      })
       fetchData()
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível criar a oportunidade.',
+        description: `Não foi possível ${editingId ? 'atualizar' : 'criar'} a oportunidade.`,
         variant: 'destructive',
       })
     } finally {
@@ -164,30 +215,34 @@ export default function SalesPipeline() {
         <h2 className="text-3xl font-bold tracking-tight">Pipeline de Vendas</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="lg" className="bg-primary hover:bg-primary/90 font-semibold shadow-md">
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary/90 font-semibold shadow-md"
+              onClick={handleNew}
+            >
               <Plus className="mr-2 h-5 w-5" /> Nova Oportunidade
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nova Oportunidade</DialogTitle>
+              <DialogTitle>{editingId ? 'Editar Oportunidade' : 'Nova Oportunidade'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleCreateOpportunity} className="space-y-4">
+            <form onSubmit={handleSaveOpportunity} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Título do Negócio</Label>
                 <Input
                   id="title"
                   required
-                  value={newOp.title}
-                  onChange={(e) => setNewOp({ ...newOp, title: e.target.value })}
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="customer">Cliente</Label>
                 <Select
-                  value={newOp.customerId}
-                  onValueChange={(value) => setNewOp({ ...newOp, customerId: value })}
+                  value={formData.customerId}
+                  onValueChange={(value) => setFormData({ ...formData, customerId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um cliente" />
@@ -202,13 +257,13 @@ export default function SalesPipeline() {
                 </Select>
               </div>
 
-              {customers.find((c) => c.id === newOp.customerId)?.customerType === 'B2B' && (
+              {customers.find((c) => c.id === formData.customerId)?.customerType === 'B2B' && (
                 <div className="space-y-2 animate-fade-in-down">
                   <Label htmlFor="company">Empresa</Label>
                   <Input
                     id="company"
                     readOnly
-                    value={customers.find((c) => c.id === newOp.customerId)?.company || ''}
+                    value={customers.find((c) => c.id === formData.customerId)?.company || ''}
                     className="bg-muted cursor-not-allowed"
                     tabIndex={-1}
                   />
@@ -219,8 +274,8 @@ export default function SalesPipeline() {
                 <Label htmlFor="description">Descrição</Label>
                 <Textarea
                   id="description"
-                  value={newOp.description}
-                  onChange={(e) => setNewOp({ ...newOp, description: e.target.value })}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Detalhes adicionais sobre a oportunidade..."
                   className="resize-none"
                   rows={2}
@@ -229,15 +284,14 @@ export default function SalesPipeline() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="value">Valor Estimado (R$)</Label>
+                  <Label htmlFor="value">Valor Estimado</Label>
                   <Input
                     id="value"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
                     required
-                    value={newOp.estimatedValue}
-                    onChange={(e) => setNewOp({ ...newOp, estimatedValue: e.target.value })}
+                    placeholder="R$ 0,00"
+                    value={formData.estimatedValue}
+                    onChange={handleCurrencyChange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -245,8 +299,10 @@ export default function SalesPipeline() {
                   <Input
                     id="expectedCloseDate"
                     type="date"
-                    value={newOp.expectedCloseDate}
-                    onChange={(e) => setNewOp({ ...newOp, expectedCloseDate: e.target.value })}
+                    value={formData.expectedCloseDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, expectedCloseDate: e.target.value })
+                    }
                   />
                 </div>
               </div>
@@ -254,8 +310,10 @@ export default function SalesPipeline() {
               <div className="space-y-2">
                 <Label htmlFor="stage">Estágio Inicial</Label>
                 <Select
-                  value={newOp.stage}
-                  onValueChange={(value) => setNewOp({ ...newOp, stage: value as PipelineStage })}
+                  value={formData.stage}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, stage: value as PipelineStage })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -271,7 +329,7 @@ export default function SalesPipeline() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmitting || !newOp.customerId}>
+                <Button type="submit" disabled={isSubmitting || !formData.customerId}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Salvar
                 </Button>
@@ -314,7 +372,8 @@ export default function SalesPipeline() {
                       key={op.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, op.id)}
-                      className="cursor-grab transition-all hover:border-primary/50 hover:shadow-sm active:cursor-grabbing bg-background"
+                      onClick={() => handleEdit(op)}
+                      className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm active:cursor-grabbing bg-background"
                     >
                       <CardHeader className="p-3 pb-2">
                         <CardTitle className="text-sm font-medium leading-none">

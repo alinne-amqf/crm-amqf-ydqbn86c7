@@ -19,7 +19,28 @@ export const opportunitiesService = {
       userId: item.user_id,
       customerName: item.customer?.name || 'Cliente Desconhecido',
       createdAt: item.created_at,
+      description: item.description,
+      expectedCloseDate: item.expected_close_date,
     })) as Opportunity[]
+  },
+
+  async update(
+    id: string,
+    data: Partial<{
+      title: string
+      estimated_value: number
+      stage: PipelineStage
+      customer_id: string
+      description?: string
+      expected_close_date?: string | null
+    }>,
+  ) {
+    const { error } = await supabase
+      .from('opportunities' as any)
+      .update({ ...data, updated_at: new Date().toISOString() })
+      .eq('id', id)
+
+    if (error) throw error
   },
 
   async updateStage(id: string, stage: PipelineStage) {
