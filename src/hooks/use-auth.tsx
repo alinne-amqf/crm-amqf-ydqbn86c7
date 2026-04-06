@@ -27,58 +27,80 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [profileLoading, setProfileLoading] = useState(true)
 
   useEffect(() => {
-    const fetchProfile = async (userId: string) => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single()
-        if (data) {
-          setProfile({
-            id: data.id,
-            email: data.email,
-            name: data.name,
-            role: data.role,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
-          })
-        } else if (error) {
-          console.error('Error fetching profile:', error)
-        }
-      } catch (err) {
-        console.error('Unexpected error fetching profile:', err)
-      }
-    }
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id).finally(() => setLoading(false))
-      } else {
-        setProfile(null)
-        setLoading(false)
-      }
+      setAuthLoading(false)
     })
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id).finally(() => setLoading(false))
-      } else {
-        setLoading(false)
-      }
+      setAuthLoading(false)
     })
 
     return () => subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (!user) {
+      setProfile(null)
+      setProfileLoading(false)
+      return
+    }
+
+    let isMounted = true
+    setProfileLoading(true)
+
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (isMounted) {
+          if (data) {
+            setProfile({
+              id: data.id,
+              email: data.email,
+              name: data.name,
+              role: data.role,
+              createdAt: data.created_at,
+              updatedAt: data.updated_at,
+            })
+          } else if (error) {
+            console.error('Error fetching profile:', error)
+            setProfile(null)
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error('Unexpected error fetching profile:', err)
+          setProfile(null)
+        }
+      } finally {
+        if (isMounted) {
+          setProfileLoading(false)
+        }
+      }
+    }
+
+    fetchProfile()
+
+    return () => {
+      isMounted = false
+    }
+  }, [user])
+
+  const loading = authLoading || profileLoading
 
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
