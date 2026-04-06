@@ -5,8 +5,9 @@ import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { opportunitiesService } from '@/services/opportunities'
 import { getCustomers } from '@/services/customers'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, CheckSquare } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/hooks/use-auth'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 const STAGES: PipelineStage[] = [
   'Prospecção',
@@ -41,6 +43,8 @@ export default function SalesPipeline() {
   const [customers, setCustomers] = useState<
     { id: string; name: string; customerType?: string; company?: string | null }[]
   >([])
+  const [profiles, setProfiles] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
   const { user } = useAuth()
@@ -63,12 +67,17 @@ export default function SalesPipeline() {
 
   const fetchData = async () => {
     try {
-      const [opsData, customersData] = await Promise.all([
-        opportunitiesService.getAll(),
-        getCustomers(),
-      ])
+      const [opsData, customersData, { data: profilesData }, { data: tasksData }] =
+        await Promise.all([
+          opportunitiesService.getAll(),
+          getCustomers(),
+          supabase.from('profiles').select('id, name'),
+          supabase.from('tasks').select('id, customer_id, status').eq('status', 'pending'),
+        ])
       setOpportunities(opsData)
       setCustomers(customersData)
+      if (profilesData) setProfiles(profilesData)
+      if (tasksData) setTasks(tasksData)
     } catch (error) {
       toast({
         title: 'Erro',
@@ -207,6 +216,20 @@ export default function SalesPipeline() {
       style: 'currency',
       currency: 'BRL',
     }).format(value)
+  }
+
+  const getInitials = (name: string) => {
+    if (!name) return 'U'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  const getPendingTasksCount = (op: any) => {
+    const customerId = op.customerId || op.customer_id
+    return tasks.filter((t) => t.customer_id === customerId).length
   }
 
   return (
@@ -370,29 +393,61 @@ export default function SalesPipeline() {
                 </div>
 
                 <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-                  {columnOps.map((op) => (
-                    <Card
-                      key={op.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, op.id)}
-                      onClick={() => handleEdit(op)}
-                      className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md active:cursor-grabbing bg-white border border-slate-200 shadow-sm rounded-lg"
-                    >
-                      <CardHeader className="p-3 pb-2">
-                        <CardTitle className="text-sm font-semibold leading-tight text-slate-800">
-                          {op.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="flex flex-col gap-1.5 p-3 pt-0">
-                        <div className="text-xs font-medium text-slate-500 line-clamp-1">
-                          {op.customerName}
-                        </div>
-                        <div className="text-sm font-bold text-slate-700">
-                          {formatCurrency(op.estimatedValue)}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {columnOps.map((op) => {
+                    const pendingCount = getPendingTasksCount(op)
+                    const responsibleId = op.userId || op.user_id
+                    const responsibleName =
+                      profiles.find((p) => p.id === responsibleId)?.name || 'Usuário'
+                    const customerName =
+                      op.customerName ||
+                      customers.find((c) => c.id === (op.customerId || op.customer_id))?.name ||
+                      'Cliente Desconhecido'
+
+                    return (
+                      <Card
+                        key={op.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, op.id)}
+                        onClick={() => handleEdit(op)}
+                        className="cursor-grab transition-all hover:border-slate-300 hover:shadow-md active:cursor-grabbing bg-white border border-slate-200 shadow-sm rounded-lg"
+                      >
+                        <CardContent className="flex flex-col gap-2 p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium leading-tight text-slate-800 line-clamp-2">
+                                {op.title}
+                              </h4>
+                              <p className="text-xs text-slate-500 mt-1 truncate">{customerName}</p>
+                            </div>
+                            <Avatar
+                              className="h-6 w-6 border border-slate-100 flex-shrink-0"
+                              title={responsibleName}
+                            >
+                              <AvatarFallback className="bg-slate-100 text-[10px] font-medium text-slate-600">
+                                {getInitials(responsibleName)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="text-sm font-bold text-emerald-600">
+                              {formatCurrency(op.estimatedValue)}
+                            </div>
+
+                            {pendingCount > 0 && (
+                              <div
+                                className="flex items-center text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                                title={`${pendingCount} tarefa(s) pendente(s)`}
+                              >
+                                <CheckSquare className="h-3 w-3 mr-1" />
+                                {pendingCount}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
                   {columnOps.length === 0 && (
                     <div className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 text-xs text-slate-400 font-medium">
                       Solte aqui
