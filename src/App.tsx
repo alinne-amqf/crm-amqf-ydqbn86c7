@@ -12,6 +12,7 @@ import NotFound from './pages/NotFound'
 import UsersPage from './pages/Users'
 import SalesPipeline from './pages/SalesPipeline'
 import TasksPage from './pages/Tasks'
+import Dashboard from './pages/Dashboard'
 import Layout from './components/Layout'
 
 const App = () => (
@@ -26,6 +27,7 @@ const App = () => (
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/customer/:id" element={<CustomerDetails />} />
               <Route path="/usuarios" element={<UsersPage />} />
               <Route path="/vendas" element={<SalesPipeline />} />
