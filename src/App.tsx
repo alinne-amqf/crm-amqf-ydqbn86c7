@@ -13,6 +13,7 @@ import UsersPage from './pages/Users'
 import SalesPipeline from './pages/SalesPipeline'
 import TasksPage from './pages/Tasks'
 import Dashboard from './pages/Dashboard'
+import Settings from './pages/Settings'
 import Layout from './components/Layout'
 
 const App = () => (
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/usuarios" element={<UsersPage />} />
               <Route path="/vendas" element={<SalesPipeline />} />
               <Route path="/tarefas" element={<TasksPage />} />
+              <Route path="/configuracoes" element={<Settings />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
