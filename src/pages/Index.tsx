@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Plus,
   Search,
@@ -41,6 +42,7 @@ import { Customer } from '@/lib/types'
 import { mockCustomers } from '@/lib/mock-data'
 
 export default function Index() {
+  const navigate = useNavigate()
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -126,7 +128,11 @@ export default function Index() {
           <TableBody>
             {filteredCustomers.length > 0 ? (
               filteredCustomers.map((customer) => (
-                <TableRow key={customer.id} className="group transition-colors">
+                <TableRow
+                  key={customer.id}
+                  className="group transition-colors cursor-pointer"
+                  onClick={() => navigate(`/customer/${customer.id}`)}
+                >
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border border-slate-100">
@@ -144,6 +150,7 @@ export default function Index() {
                     <div className="flex flex-col space-y-1">
                       <a
                         href={`mailto:${customer.email}`}
+                        onClick={(e) => e.stopPropagation()}
                         className="text-sm text-slate-600 hover:text-primary flex items-center gap-1.5 transition-colors"
                       >
                         <Mail className="h-3.5 w-3.5" />
@@ -166,7 +173,7 @@ export default function Index() {
                       {customer.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -179,6 +186,9 @@ export default function Index() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={() => navigate(`/customer/${customer.id}`)}>
+                          Ver detalhes
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Editar cliente</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive">
                           Excluir

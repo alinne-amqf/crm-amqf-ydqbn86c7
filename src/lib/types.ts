@@ -1,4 +1,5 @@
 export type CustomerStatus = 'Ativo' | 'Lead' | 'Inativo'
+export type InteractionType = 'email' | 'call' | 'meeting' | 'note'
 
 export interface Customer {
   id: string
@@ -9,4 +10,12 @@ export interface Customer {
   status: CustomerStatus
   avatar?: string
   createdAt: string
+}
+
+export interface Interaction {
+  id: string
+  customerId: string
+  type: InteractionType
+  date: string
+  description: string
 }

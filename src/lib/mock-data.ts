@@ -1,4 +1,4 @@
-import { Customer } from './types'
+import { Customer, Interaction } from './types'
 
 export const mockCustomers: Customer[] = [
   {
@@ -60,5 +60,71 @@ export const mockCustomers: Customer[] = [
     status: 'Ativo',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=6',
     createdAt: '2023-08-15T08:30:00Z',
+  },
+]
+
+export const mockInteractions: Interaction[] = [
+  {
+    id: '1',
+    customerId: '1',
+    type: 'call',
+    date: '2023-10-15T14:30:00Z',
+    description: 'Ligação realizada para apresentar nova proposta comercial.',
+  },
+  {
+    id: '2',
+    customerId: '1',
+    type: 'email',
+    date: '2023-10-14T09:00:00Z',
+    description: 'E-mail enviado com o material de apresentação e cases de sucesso.',
+  },
+  {
+    id: '3',
+    customerId: '1',
+    type: 'note',
+    date: '2023-10-10T11:00:00Z',
+    description: 'Cliente demonstrou interesse no plano anual.',
+  },
+  {
+    id: '4',
+    customerId: '2',
+    type: 'meeting',
+    date: '2023-10-16T10:00:00Z',
+    description: 'Reunião de alinhamento sobre as necessidades técnicas.',
+  },
+  {
+    id: '5',
+    customerId: '2',
+    type: 'call',
+    date: '2023-10-12T15:20:00Z',
+    description: 'Primeiro contato realizado. Agendada reunião de discovery.',
+  },
+  {
+    id: '6',
+    customerId: '3',
+    type: 'email',
+    date: '2023-10-12T09:30:00Z',
+    description: 'Enviada fatura referente à renovação do contrato.',
+  },
+  {
+    id: '7',
+    customerId: '4',
+    type: 'note',
+    date: '2023-09-25T14:15:00Z',
+    description: 'Cliente solicitou cancelamento temporário do serviço.',
+  },
+  {
+    id: '8',
+    customerId: '5',
+    type: 'meeting',
+    date: '2023-10-15T16:00:00Z',
+    description: 'Apresentação da plataforma para o time de operações.',
+  },
+  {
+    id: '9',
+    customerId: '6',
+    type: 'call',
+    date: '2023-09-10T10:45:00Z',
+    description: 'Acompanhamento do uso da ferramenta após o primeiro mês.',
   },
 ]
