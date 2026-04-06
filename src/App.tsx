@@ -10,7 +10,6 @@ import CustomerDetails from './pages/CustomerDetails'
 import Login from './pages/Login'
 import UpdatePassword from './pages/UpdatePassword'
 import NotFound from './pages/NotFound'
-import UsersPage from './pages/Users'
 import SalesPipeline from './pages/SalesPipeline'
 import TasksPage from './pages/Tasks'
 import Dashboard from './pages/Dashboard'
@@ -31,7 +30,6 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/customer/:id" element={<CustomerDetails />} />
-              <Route path="/usuarios" element={<UsersPage />} />
               <Route path="/vendas" element={<SalesPipeline />} />
               <Route path="/tarefas" element={<TasksPage />} />
               <Route element={<AdminRoute />}>

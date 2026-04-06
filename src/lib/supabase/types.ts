@@ -9,6 +9,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'audit_logs_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       customers: {
         Row: {
           avatar: string | null
@@ -146,6 +175,7 @@ export type Database = {
           id: string
           name: string | null
           role: Database['public']['Enums']['user_role']
+          status: string
           updated_at: string
         }
         Insert: {
@@ -154,6 +184,7 @@ export type Database = {
           id: string
           name?: string | null
           role?: Database['public']['Enums']['user_role']
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -162,6 +193,7 @@ export type Database = {
           id?: string
           name?: string | null
           role?: Database['public']['Enums']['user_role']
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -386,6 +418,11 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: audit_logs
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (nullable)
+//   action: text (not null)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: customers
 //   id: uuid (not null, default: gen_random_uuid())
 //   user_id: uuid (not null)
@@ -425,6 +462,7 @@ export const Constants = {
 //   role: user_role (not null, default: 'Vendedor'::user_role)
 //   created_at: timestamp with time zone (not null, default: now())
 //   updated_at: timestamp with time zone (not null, default: now())
+//   status: text (not null, default: 'Ativo'::text)
 // Table: system_settings
 //   id: uuid (not null, default: gen_random_uuid())
 //   system_name: text (not null, default: 'CRM AMQF'::text)
@@ -444,6 +482,9 @@ export const Constants = {
 //   updated_at: timestamp with time zone (not null, default: now())
 
 // --- CONSTRAINTS ---
+// Table: audit_logs
+//   PRIMARY KEY audit_logs_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY audit_logs_user_id_fkey: FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL
 // Table: customers
 //   PRIMARY KEY customers_pkey: PRIMARY KEY (id)
 //   FOREIGN KEY customers_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
@@ -466,6 +507,11 @@ export const Constants = {
 //   FOREIGN KEY tasks_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: audit_logs
+//   Policy "Admins can insert audit logs" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'Admin'::user_role))))
+//   Policy "Admins can read audit logs" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'Admin'::user_role))))
 // Table: customers
 //   Policy "Customers delete policy" (DELETE, PERMISSIVE) roles={authenticated}
 //     USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = ANY (ARRAY['Admin'::user_role, 'Gerente'::user_role]))))))
@@ -537,10 +583,28 @@ export const Constants = {
 //    LANGUAGE plpgsql
 //    SECURITY DEFINER
 //   AS $function$
+//   DECLARE
+//     invited_role public.user_role;
 //   BEGIN
+//     BEGIN
+//       invited_role := (NEW.raw_user_meta_data->>'role')::public.user_role;
+//     EXCEPTION WHEN OTHERS THEN
+//       invited_role := 'Vendedor'::public.user_role;
+//     END;
+//
+//     IF invited_role IS NULL THEN
+//       invited_role := 'Vendedor'::public.user_role;
+//     END IF;
+//
 //     INSERT INTO public.profiles (id, email, name, role)
-//     VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)), 'Vendedor'::public.user_role)
+//     VALUES (
+//       NEW.id,
+//       NEW.email,
+//       COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+//       invited_role
+//     )
 //     ON CONFLICT (id) DO NOTHING;
+//
 //     RETURN NEW;
 //   END;
 //   $function$
