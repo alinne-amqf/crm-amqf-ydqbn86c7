@@ -12,12 +12,14 @@ import {
   MailCheck,
   Loader2,
   PlusCircle,
+  Circle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -29,6 +31,9 @@ import { toast } from 'sonner'
 import { Customer, Interaction } from '@/lib/types'
 import { getCustomerById } from '@/services/customers'
 import { getInteractionsByCustomer, createInteraction } from '@/services/interactions'
+import { Task, getTasksByCustomer, createTask, updateTask } from '@/services/tasks'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export default function CustomerDetails() {
   const { id } = useParams()
@@ -36,7 +41,14 @@ export default function CustomerDetails() {
 
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [interactions, setInteractions] = useState<Interaction[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+
+  const [isAddingTask, setIsAddingTask] = useState(false)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskDate, setNewTaskDate] = useState('')
+  const [newTaskType, setNewTaskType] = useState<Task['type']>('call')
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false)
   const [isAddingInteraction, setIsAddingInteraction] = useState(false)
   const [newInteractionType, setNewInteractionType] = useState<Interaction['type']>('note')
   const [newInteractionDesc, setNewInteractionDesc] = useState('')
@@ -51,12 +63,14 @@ export default function CustomerDetails() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [customerData, interactionsData] = await Promise.all([
+      const [customerData, interactionsData, tasksData] = await Promise.all([
         getCustomerById(id!),
         getInteractionsByCustomer(id!),
+        getTasksByCustomer(id!),
       ])
       setCustomer(customerData)
       setInteractions(interactionsData)
+      setTasks(tasksData)
     } catch (error: any) {
       toast.error('Erro ao carregar detalhes', { description: error.message })
     } finally {
@@ -164,6 +178,46 @@ export default function CustomerDetails() {
     }).format(date)
   }
 
+  const handleAddTask = async () => {
+    if (!newTaskTitle.trim() || !newTaskDate || !id) return
+    try {
+      setIsSubmittingTask(true)
+      const newTask = await createTask({
+        customer_id: id,
+        title: newTaskTitle,
+        due_date: new Date(newTaskDate).toISOString(),
+        type: newTaskType,
+        status: 'pending',
+      })
+      setTasks((prev) =>
+        [...prev, newTask].sort(
+          (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime(),
+        ),
+      )
+      setNewTaskTitle('')
+      setNewTaskDate('')
+      setIsAddingTask(false)
+      toast.success('Tarefa adicionada com sucesso!')
+    } catch (error: any) {
+      toast.error('Erro ao adicionar tarefa', { description: error.message })
+    } finally {
+      setIsSubmittingTask(false)
+    }
+  }
+
+  const handleToggleTaskStatus = async (task: Task) => {
+    try {
+      const newStatus = task.status === 'pending' ? 'completed' : 'pending'
+      await updateTask(task.id, { status: newStatus })
+      setTasks(tasks.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)))
+      if (newStatus === 'completed') {
+        toast.success('Tarefa concluída!')
+      }
+    } catch (error: any) {
+      toast.error('Erro ao atualizar tarefa', { description: error.message })
+    }
+  }
+
   const formatShortDate = (dateString: string) => {
     const date = new Date(dateString)
     return new Intl.DateTimeFormat('pt-BR', {
@@ -250,6 +304,107 @@ export default function CustomerDetails() {
                     {formatShortDate(customer.createdAt)}
                   </span>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tasks Widget */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="bg-slate-50/50 pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-semibold text-slate-800">
+                Tarefas Pendentes
+              </CardTitle>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6"
+                onClick={() => setIsAddingTask(!isAddingTask)}
+              >
+                <PlusCircle className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {isAddingTask && (
+                <div className="p-4 border-b border-slate-100 bg-slate-50/50 space-y-3 animate-fade-in-down">
+                  <Input
+                    placeholder="Título da tarefa..."
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    className="h-8 text-sm bg-white"
+                  />
+                  <div className="flex gap-2">
+                    <Select value={newTaskType} onValueChange={(v: any) => setNewTaskType(v)}>
+                      <SelectTrigger className="h-8 text-sm w-[110px] bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="call">Ligação</SelectItem>
+                        <SelectItem value="email">E-mail</SelectItem>
+                        <SelectItem value="meeting">Reunião</SelectItem>
+                        <SelectItem value="other">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="datetime-local"
+                      value={newTaskDate}
+                      onChange={(e) => setNewTaskDate(e.target.value)}
+                      className="h-8 text-sm flex-1 bg-white"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setIsAddingTask(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={!newTaskTitle || !newTaskDate || isSubmittingTask}
+                      onClick={handleAddTask}
+                    >
+                      {isSubmittingTask ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="max-h-[300px] overflow-y-auto p-4 space-y-3">
+                {tasks.filter((t) => t.status === 'pending').length > 0 ? (
+                  tasks
+                    .filter((t) => t.status === 'pending')
+                    .map((task) => (
+                      <div key={task.id} className="flex items-start gap-3 group">
+                        <button
+                          className="mt-0.5 text-slate-300 hover:text-emerald-500 transition-colors"
+                          onClick={() => handleToggleTaskStatus(task)}
+                        >
+                          <Circle className="h-4 w-4" />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-800 truncate">
+                            {task.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                              {task.type}
+                            </span>
+                            <span className="text-xs text-slate-500 flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {format(new Date(task.due_date), 'dd/MM HH:mm', { locale: ptBR })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <p className="text-sm text-slate-500 text-center py-4">
+                    Nenhuma tarefa pendente.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

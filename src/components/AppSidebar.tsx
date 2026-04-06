@@ -7,6 +7,7 @@ import {
   Settings,
   LifeBuoy,
   Shield,
+  ListTodo,
 } from 'lucide-react'
 
 import {
@@ -31,6 +32,7 @@ export function AppSidebar() {
     { title: 'Dashboard', icon: LayoutDashboard, url: '/dashboard' },
     { title: 'Clientes', icon: Users, url: '/' },
     { title: 'Vendas', icon: Briefcase, url: '/vendas' },
+    { title: 'Tarefas', icon: ListTodo, url: '/tarefas' },
     { title: 'Relatórios', icon: BarChart3, url: '/relatorios' },
     ...(profile?.role === 'Admin' ? [{ title: 'Usuários', icon: Shield, url: '/usuarios' }] : []),
     { title: 'Configurações', icon: Settings, url: '/configuracoes' },

@@ -11,6 +11,7 @@ import UpdatePassword from './pages/UpdatePassword'
 import NotFound from './pages/NotFound'
 import UsersPage from './pages/Users'
 import SalesPipeline from './pages/SalesPipeline'
+import TasksPage from './pages/Tasks'
 import Layout from './components/Layout'
 
 const App = () => (
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/customer/:id" element={<CustomerDetails />} />
               <Route path="/usuarios" element={<UsersPage />} />
               <Route path="/vendas" element={<SalesPipeline />} />
+              <Route path="/tarefas" element={<TasksPage />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
