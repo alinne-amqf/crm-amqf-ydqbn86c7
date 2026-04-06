@@ -210,7 +210,7 @@ export default function SalesPipeline() {
   }
 
   return (
-    <div className="flex h-full min-h-[calc(100vh-4rem)] flex-col space-y-4 p-8 pt-6">
+    <div className="flex h-full min-h-[calc(100vh-4rem)] flex-col space-y-4 p-8 pt-6 bg-slate-50">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Pipeline de Vendas</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -344,7 +344,7 @@ export default function SalesPipeline() {
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="flex flex-1 gap-4 overflow-x-auto pb-4">
+        <div className="flex flex-1 gap-6 overflow-x-auto pb-6 scroll-smooth">
           {STAGES.map((stage) => {
             const columnOps = opportunities.filter((op) => op.stage === stage)
             const totalValue = columnOps.reduce((sum, op) => sum + op.estimatedValue, 0)
@@ -352,18 +352,21 @@ export default function SalesPipeline() {
             return (
               <div
                 key={stage}
-                className="flex w-80 flex-shrink-0 flex-col rounded-lg bg-muted/50 p-3 transition-colors hover:bg-muted"
+                className="flex w-80 flex-shrink-0 flex-col rounded-xl bg-white shadow-sm p-4 transition-colors hover:shadow-md border border-slate-100"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, stage)}
               >
-                <div className="mb-3 flex items-center justify-between px-1">
-                  <h3 className="text-sm font-semibold">{stage}</h3>
-                  <Badge variant="secondary" className="text-xs">
-                    {columnOps.length}
-                  </Badge>
-                </div>
-                <div className="mb-3 px-1 text-xs font-medium text-muted-foreground">
-                  {formatCurrency(totalValue)}
+                <div className="mb-4 flex flex-col gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-800">{stage}</h3>
+                    <Badge
+                      variant="secondary"
+                      className="bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-medium"
+                    >
+                      {columnOps.length}
+                    </Badge>
+                  </div>
+                  <div className="text-sm font-bold text-primary">{formatCurrency(totalValue)}</div>
                 </div>
 
                 <div className="flex-1 space-y-3 overflow-y-auto pr-1">
@@ -373,25 +376,25 @@ export default function SalesPipeline() {
                       draggable
                       onDragStart={(e) => handleDragStart(e, op.id)}
                       onClick={() => handleEdit(op)}
-                      className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm active:cursor-grabbing bg-background"
+                      className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md active:cursor-grabbing bg-white border border-slate-200 shadow-sm rounded-lg"
                     >
                       <CardHeader className="p-3 pb-2">
-                        <CardTitle className="text-sm font-medium leading-none">
+                        <CardTitle className="text-sm font-semibold leading-tight text-slate-800">
                           {op.title}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="flex flex-col gap-2 p-3 pt-0">
-                        <div className="text-xs text-muted-foreground line-clamp-1">
+                      <CardContent className="flex flex-col gap-1.5 p-3 pt-0">
+                        <div className="text-xs font-medium text-slate-500 line-clamp-1">
                           {op.customerName}
                         </div>
-                        <div className="text-sm font-bold text-primary">
+                        <div className="text-sm font-bold text-slate-700">
                           {formatCurrency(op.estimatedValue)}
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                   {columnOps.length === 0 && (
-                    <div className="flex h-24 items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/20 text-xs text-muted-foreground">
+                    <div className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 text-xs text-slate-400 font-medium">
                       Solte aqui
                     </div>
                   )}
