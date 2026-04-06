@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
@@ -20,31 +20,56 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, user } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user) {
+      navigate('/')
+    }
+  }, [user, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    if (isLogin) {
-      const { error } = await signIn(email, password)
-      if (error) {
-        toast.error('Erro ao fazer login', { description: error.message })
+    try {
+      if (isLogin) {
+        const { error } = await signIn(email, password)
+        if (error) {
+          const isInvalidCredentials = error.message
+            .toLowerCase()
+            .includes('invalid login credentials')
+          toast.error('Erro ao fazer login', {
+            description: isInvalidCredentials
+              ? 'Credenciais inválidas. Verifique seu e-mail e senha.'
+              : error.message,
+          })
+        } else {
+          toast.success('Login realizado com sucesso!')
+          navigate('/')
+        }
       } else {
-        toast.success('Login realizado com sucesso!')
-        navigate('/')
+        const { data, error } = await signUp(email, password)
+        if (error) {
+          toast.error('Erro ao criar conta', { description: error.message })
+        } else if (data?.user?.identities && data.user.identities.length === 0) {
+          toast.error('Erro ao criar conta', {
+            description: 'Este e-mail já está cadastrado. Tente fazer login.',
+          })
+          setIsLogin(true)
+        } else {
+          toast.success('Conta criada com sucesso!')
+          if (!data?.session) {
+            setIsLogin(true)
+          }
+        }
       }
-    } else {
-      const { error } = await signUp(email, password)
-      if (error) {
-        toast.error('Erro ao criar conta', { description: error.message })
-      } else {
-        toast.success('Conta criada!', { description: 'Verifique seu email ou faça login.' })
-        setIsLogin(true)
-      }
+    } catch (err: any) {
+      toast.error('Erro inesperado', { description: err?.message || 'Ocorreu um erro.' })
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
@@ -86,6 +111,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                minLength={6}
                 className="bg-white"
               />
             </div>
@@ -100,6 +126,7 @@ export default function Login() {
               variant="ghost"
               className="w-full text-muted-foreground hover:text-foreground"
               onClick={() => setIsLogin(!isLogin)}
+              disabled={loading}
             >
               {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
             </Button>
