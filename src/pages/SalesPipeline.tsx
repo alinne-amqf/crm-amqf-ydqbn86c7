@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { opportunitiesService } from '@/services/opportunities'
+import { getCustomers } from '@/services/customers'
 import { Button } from '@/components/ui/button'
 import { Plus, Loader2 } from 'lucide-react'
 import {
@@ -37,7 +38,9 @@ const STAGES: PipelineStage[] = [
 export default function SalesPipeline() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [loading, setLoading] = useState(true)
-  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([])
+  const [customers, setCustomers] = useState<
+    { id: string; name: string; customerType?: string; company?: string | null }[]
+  >([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
   const { user } = useAuth()
@@ -61,7 +64,7 @@ export default function SalesPipeline() {
     try {
       const [opsData, customersData] = await Promise.all([
         opportunitiesService.getAll(),
-        opportunitiesService.getCustomers(),
+        getCustomers(),
       ])
       setOpportunities(opsData)
       setCustomers(customersData)
@@ -198,6 +201,19 @@ export default function SalesPipeline() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {customers.find((c) => c.id === newOp.customerId)?.customerType === 'B2B' && (
+                <div className="space-y-2 animate-fade-in-down">
+                  <Label htmlFor="company">Empresa</Label>
+                  <Input
+                    id="company"
+                    readOnly
+                    value={customers.find((c) => c.id === newOp.customerId)?.company || ''}
+                    className="bg-muted cursor-not-allowed"
+                    tabIndex={-1}
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição</Label>

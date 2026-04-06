@@ -96,6 +96,7 @@ export type Database = {
         Row: {
           created_at: string
           customer_id: string
+          description: string | null
           estimated_value: number
           expected_close_date: string | null
           id: string
@@ -107,6 +108,7 @@ export type Database = {
         Insert: {
           created_at?: string
           customer_id: string
+          description?: string | null
           estimated_value?: number
           expected_close_date?: string | null
           id?: string
@@ -118,6 +120,7 @@ export type Database = {
         Update: {
           created_at?: string
           customer_id?: string
+          description?: string | null
           estimated_value?: number
           expected_close_date?: string | null
           id?: string
@@ -343,6 +346,7 @@ export const Constants = {
 //   user_id: uuid (not null)
 //   created_at: timestamp with time zone (not null, default: now())
 //   updated_at: timestamp with time zone (not null, default: now())
+//   description: text (nullable)
 // Table: profiles
 //   id: uuid (not null)
 //   email: text (not null)
