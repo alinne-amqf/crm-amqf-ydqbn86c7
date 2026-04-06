@@ -11,6 +11,9 @@ import {
   InboxIcon,
   Loader2,
   LogOut,
+  Pencil,
+  Eye,
+  Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -38,10 +41,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { CustomerForm } from '@/components/CustomerForm'
 import { Customer } from '@/lib/types'
-import { getCustomers, createCustomer } from '@/services/customers'
+import { getCustomers, createCustomer, updateCustomer, uploadAvatar } from '@/services/customers'
 import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
@@ -49,6 +53,7 @@ export default function Index() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const { signOut } = useAuth()
 
@@ -75,21 +80,54 @@ export default function Index() {
       (c) =>
         c.name.toLowerCase().includes(query) ||
         c.email.toLowerCase().includes(query) ||
-        c.company.toLowerCase().includes(query),
+        (c.company && c.company.toLowerCase().includes(query)),
     )
   }, [customers, searchQuery])
 
-  const handleAddCustomer = async (newCustomerData: Omit<Customer, 'id' | 'createdAt'>) => {
+  const handleSaveCustomer = async (
+    customerData: Omit<Customer, 'id' | 'createdAt'>,
+    file: File | null,
+  ) => {
     try {
-      const newCustomer = await createCustomer(newCustomerData)
-      setCustomers((prev) => [newCustomer, ...prev])
-      setIsSheetOpen(false)
-      toast.success('Cliente cadastrado com sucesso!', {
-        description: `${newCustomer.name} foi adicionado à sua base de clientes.`,
-      })
+      let avatarUrl = customerData.avatar
+      if (file) {
+        avatarUrl = await uploadAvatar(file)
+      }
+
+      if (editingCustomer) {
+        const updated = await updateCustomer(editingCustomer.id, {
+          ...customerData,
+          avatar: avatarUrl,
+        })
+        setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+        toast.success('Cliente atualizado com sucesso!')
+      } else {
+        const created = await createCustomer({
+          ...customerData,
+          avatar:
+            avatarUrl ||
+            `https://img.usecurling.com/ppl/thumbnail?seed=${Math.floor(Math.random() * 1000)}`,
+        })
+        setCustomers((prev) => [created, ...prev])
+        toast.success('Cliente cadastrado com sucesso!', {
+          description: `${created.name} foi adicionado à sua base de clientes.`,
+        })
+      }
+      handleCloseSheet()
     } catch (error: any) {
-      toast.error('Erro ao criar cliente', { description: error.message })
+      toast.error('Erro ao salvar cliente', { description: error.message })
     }
+  }
+
+  const handleEditClick = (customer: Customer, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setEditingCustomer(customer)
+    setIsSheetOpen(true)
+  }
+
+  const handleCloseSheet = () => {
+    setIsSheetOpen(false)
+    setTimeout(() => setEditingCustomer(null), 300)
   }
 
   const handleLogout = async () => {
@@ -110,7 +148,7 @@ export default function Index() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 animate-fade-in-up">
+    <div className="w-full max-w-7xl mx-auto space-y-6 animate-fade-in-up pb-10">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h1>
@@ -175,7 +213,11 @@ export default function Index() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border border-slate-100">
-                        <AvatarImage src={customer.avatar} alt={customer.name} />
+                        <AvatarImage
+                          src={customer.avatar || ''}
+                          alt={customer.name}
+                          className="object-cover"
+                        />
                         <AvatarFallback className="bg-primary/10 text-primary">
                           {customer.name.charAt(0)}
                         </AvatarFallback>
@@ -202,7 +244,7 @@ export default function Index() {
                       </a>
                       <span className="text-sm text-slate-500 flex items-center gap-1.5">
                         <Phone className="h-3.5 w-3.5" />
-                        {customer.phone}
+                        {customer.phone || '-'}
                       </span>
                     </div>
                   </TableCell>
@@ -229,12 +271,18 @@ export default function Index() {
                           <span className="sr-only">Ações</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem onClick={() => navigate(`/customer/${customer.id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
                           Ver detalhes
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Editar cliente</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleEditClick(customer, e)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Editar cliente
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-destructive focus:text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
                           Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -261,15 +309,23 @@ export default function Index() {
         </Table>
       </div>
 
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+      <Sheet open={isSheetOpen} onOpenChange={(open) => !open && handleCloseSheet()}>
         <SheetContent className="w-full sm:max-w-md border-l overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="text-2xl">Cadastrar Novo Cliente</SheetTitle>
+            <SheetTitle className="text-2xl">
+              {editingCustomer ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}
+            </SheetTitle>
             <SheetDescription>
-              Preencha os dados abaixo para adicionar um novo cliente ou lead à sua base.
+              {editingCustomer
+                ? 'Atualize os dados do cliente abaixo.'
+                : 'Preencha os dados abaixo para adicionar um novo cliente ou lead à sua base.'}
             </SheetDescription>
           </SheetHeader>
-          <CustomerForm onSubmit={handleAddCustomer} onCancel={() => setIsSheetOpen(false)} />
+          <CustomerForm
+            initialData={editingCustomer}
+            onSubmit={handleSaveCustomer}
+            onCancel={handleCloseSheet}
+          />
         </SheetContent>
       </Sheet>
     </div>
