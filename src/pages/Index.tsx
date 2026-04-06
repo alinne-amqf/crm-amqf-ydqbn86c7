@@ -181,7 +181,12 @@ export default function Index() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-medium text-slate-900">{customer.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-slate-900">{customer.name}</span>
+                          <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-medium">
+                            {customer.customerType}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </TableCell>
@@ -204,7 +209,7 @@ export default function Index() {
                   <TableCell>
                     <div className="flex items-center gap-1.5 text-sm text-slate-700 font-medium">
                       <Building className="h-4 w-4 text-slate-400" />
-                      {customer.company}
+                      {customer.company || '-'}
                     </div>
                   </TableCell>
                   <TableCell>

@@ -17,6 +17,8 @@ export const getCustomers = async () => {
     company: d.company,
     status: d.status,
     avatar: d.avatar,
+    customerType: d.customer_type || 'B2C',
+    document: d.document,
     createdAt: d.created_at,
   })) as Customer[]
 }
@@ -34,6 +36,8 @@ export const getCustomerById = async (id: string) => {
     company: data.company,
     status: data.status,
     avatar: data.avatar,
+    customerType: data.customer_type || 'B2C',
+    document: data.document,
     createdAt: data.created_at,
   } as Customer
 }
@@ -53,6 +57,8 @@ export const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt'
         company: customer.company,
         status: customer.status,
         avatar: customer.avatar,
+        customer_type: customer.customerType,
+        document: customer.document,
       },
     ])
     .select()
@@ -68,6 +74,8 @@ export const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt'
     company: data.company,
     status: data.status,
     avatar: data.avatar,
+    customerType: data.customer_type,
+    document: data.document,
     createdAt: data.created_at,
   } as Customer
 }

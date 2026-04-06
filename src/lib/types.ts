@@ -17,6 +17,8 @@ export interface Customer {
   company: string | null
   status: string
   avatar: string | null
+  customerType: 'B2B' | 'B2C'
+  document: string | null
   createdAt: string
 }
 

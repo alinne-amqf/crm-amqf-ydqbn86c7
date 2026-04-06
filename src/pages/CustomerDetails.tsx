@@ -197,9 +197,12 @@ export default function CustomerDetails() {
                 </AvatarFallback>
               </Avatar>
               <CardTitle className="text-2xl font-bold text-slate-900">{customer.name}</CardTitle>
-              <div className="mt-3">
+              <div className="mt-3 flex items-center justify-center gap-2">
                 <Badge variant="outline" className={getStatusColor(customer.status)}>
                   {customer.status}
+                </Badge>
+                <Badge variant="secondary" className="font-medium">
+                  {customer.customerType}
                 </Badge>
               </div>
             </CardHeader>
@@ -224,10 +227,19 @@ export default function CustomerDetails() {
                 </div>
               </div>
               <div className="flex items-start gap-3 text-sm">
+                <FileText className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="text-xs text-slate-500 font-medium mb-0.5">
+                    {customer.customerType === 'B2B' ? 'CNPJ' : 'CPF'}
+                  </span>
+                  <span className="text-slate-700 font-medium">{customer.document || '-'}</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 text-sm">
                 <Building className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
                 <div className="flex flex-col">
                   <span className="text-xs text-slate-500 font-medium mb-0.5">Empresa</span>
-                  <span className="text-slate-700 font-medium">{customer.company}</span>
+                  <span className="text-slate-700 font-medium">{customer.company || '-'}</span>
                 </div>
               </div>
               <div className="flex items-start gap-3 text-sm">

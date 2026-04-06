@@ -1,0 +1,2 @@
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS customer_type TEXT NOT NULL DEFAULT 'B2C';
+ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS document TEXT;
