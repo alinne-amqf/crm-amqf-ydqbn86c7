@@ -8,40 +8,58 @@ import {
   ArrowUpRight,
   MoreHorizontal,
   Calendar as CalendarIcon,
+  Plus,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts'
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts'
 
 import { dashboardService } from '@/services/dashboard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
 
 interface DashboardData {
   metrics: {
     totalCustomers: number
+    customersGrowth: number | null
     pipelineValue: number
+    pipelineGrowth: number | null
     wonValue: number
-    pendingTasksToday: number
+    wonGrowth: number | null
+    pendingTasks: number
+    tasksGrowth: number | null
     funnelData: Array<{ stage: string; value: number }>
   }
   recentOpportunities: any[]
   upcomingTasks: any[]
 }
 
+type Period = 'month' | 'prev_month' | 'all'
+
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [period, setPeriod] = useState<Period>('month')
 
   useEffect(() => {
     async function fetchData() {
       try {
         setIsLoading(true)
         const [metrics, recentOpportunities, upcomingTasks] = await Promise.all([
-          dashboardService.getMetrics(),
+          dashboardService.getMetrics(period),
           dashboardService.getRecentOpportunities(),
           dashboardService.getUpcomingTasks(),
         ])
@@ -53,7 +71,7 @@ export default function Dashboard() {
       }
     }
     fetchData()
-  }, [])
+  }, [period])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -71,10 +89,47 @@ export default function Dashboard() {
     'bg-card text-card-foreground border border-slate-200 shadow-sm',
   ]
 
-  if (isLoading) {
+  const GrowthIndicator = ({
+    value,
+    label = 'em relação ao período anterior',
+  }: {
+    value: number | null
+    label?: string
+  }) => {
+    if (value === null)
+      return <p className="text-xs text-slate-500 mt-1 opacity-0">Sem comparação</p>
+    const isPositive = value >= 0
+    return (
+      <div
+        className={cn(
+          'flex items-center text-xs font-medium mt-1',
+          isPositive ? 'text-emerald-600' : 'text-rose-600',
+        )}
+      >
+        {isPositive ? (
+          <TrendingUp className="h-3 w-3 mr-1" />
+        ) : (
+          <TrendingDown className="h-3 w-3 mr-1" />
+        )}
+        {Math.abs(value)}% <span className="text-slate-500 font-normal ml-1">{label}</span>
+      </div>
+    )
+  }
+
+  const chartConfig = {
+    value: {
+      label: 'Valor',
+      color: 'hsl(var(--primary))',
+    },
+  }
+
+  if (isLoading && !data) {
     return (
       <div className="w-full max-w-7xl mx-auto space-y-6 animate-pulse">
-        <div className="h-8 w-48 bg-slate-200 rounded mb-6"></div>
+        <div className="flex justify-between items-center mb-6">
+          <div className="h-8 w-48 bg-slate-200 rounded"></div>
+          <div className="h-10 w-32 bg-slate-200 rounded"></div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-32 w-full rounded-2xl" />
@@ -87,16 +142,35 @@ export default function Dashboard() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-8 animate-fade-in-up pb-10">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">
             Resumo das suas atividades e métricas importantes.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild className="rounded-full shadow-sm">
-            <Link to="/vendas">Nova Oportunidade</Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
+            <SelectTrigger className="w-[160px] bg-white">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="month">Mês Atual</SelectItem>
+              <SelectItem value="prev_month">Mês Anterior</SelectItem>
+              <SelectItem value="all">Todo o Período</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button asChild variant="outline" className="shadow-sm">
+            <Link to="/tarefas">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Tarefa
+            </Link>
+          </Button>
+          <Button asChild className="shadow-sm">
+            <Link to="/vendas">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Oportunidade
+            </Link>
           </Button>
         </div>
       </div>
@@ -104,14 +178,16 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="rounded-2xl border-slate-200/60 shadow-sm overflow-hidden transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total de Clientes</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">
+              Clientes no Período
+            </CardTitle>
             <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
               <Users className="h-4 w-4 text-blue-600" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">{data?.metrics.totalCustomers}</div>
-            <p className="text-xs text-slate-500 mt-1">Cadastrados no sistema</p>
+            <GrowthIndicator value={data?.metrics.customersGrowth ?? null} />
           </CardContent>
         </Card>
 
@@ -126,7 +202,7 @@ export default function Dashboard() {
             <div className="text-2xl font-bold text-slate-900">
               {formatCurrency(data?.metrics.pipelineValue || 0)}
             </div>
-            <p className="text-xs text-slate-500 mt-1">Oportunidades em aberto</p>
+            <GrowthIndicator value={data?.metrics.pipelineGrowth ?? null} />
           </CardContent>
         </Card>
 
@@ -141,22 +217,20 @@ export default function Dashboard() {
             <div className="text-2xl font-bold text-slate-900">
               {formatCurrency(data?.metrics.wonValue || 0)}
             </div>
-            <p className="text-xs text-slate-500 mt-1">Negócios fechados ganhos</p>
+            <GrowthIndicator value={data?.metrics.wonGrowth ?? null} />
           </CardContent>
         </Card>
 
         <Card className="rounded-2xl border-slate-200/60 shadow-sm overflow-hidden transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Tarefas para Hoje</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Tarefas no Período</CardTitle>
             <div className="h-8 w-8 rounded-full bg-rose-100 flex items-center justify-center">
               <ListTodo className="h-4 w-4 text-rose-600" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
-              {data?.metrics.pendingTasksToday}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">Atividades pendentes</p>
+            <div className="text-2xl font-bold text-slate-900">{data?.metrics.pendingTasks}</div>
+            <GrowthIndicator value={data?.metrics.tasksGrowth ?? null} />
           </CardContent>
         </Card>
       </div>
@@ -260,6 +334,79 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-slate-900">Funil de Vendas</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full h-8 w-8 text-slate-500"
+                asChild
+              >
+                <Link to="/vendas">
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            <div className="mb-6">
+              <span className="text-3xl font-bold tracking-tight text-slate-900">
+                {formatCurrency(data?.metrics.pipelineValue || 0)}
+              </span>
+              <p className="text-sm text-slate-500 mt-1">
+                Total em Pipeline (
+                {period === 'month'
+                  ? 'Mês Atual'
+                  : period === 'prev_month'
+                    ? 'Mês Anterior'
+                    : 'Todo o Período'}
+                )
+              </p>
+            </div>
+
+            <div className="flex-1 min-h-[200px] w-full mt-auto">
+              {data?.metrics?.funnelData && data.metrics.funnelData.length > 0 ? (
+                <ChartContainer config={chartConfig} className="h-full w-full min-h-[250px]">
+                  <BarChart
+                    data={data.metrics.funnelData}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="stage"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontSize: 12 }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#64748b', fontSize: 12 }}
+                      tickFormatter={(val) => `R$${val / 1000}k`}
+                    />
+                    <ChartTooltip
+                      cursor={{ fill: '#f8fafc' }}
+                      content={
+                        <ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />
+                      }
+                    />
+                    <Bar
+                      dataKey="value"
+                      fill="var(--color-value)"
+                      radius={[6, 6, 0, 0]}
+                      barSize={40}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-slate-400 text-sm pb-8">
+                  Dados insuficientes para o gráfico
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-900">Agenda de Tarefas</h2>
@@ -310,74 +457,6 @@ export default function Dashboard() {
               {(!data?.upcomingTasks || data.upcomingTasks.length === 0) && (
                 <div className="py-8 text-center text-slate-500 text-sm">
                   Nenhuma tarefa pendente próxima.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Funil de Vendas</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-8 w-8 text-slate-500"
-                asChild
-              >
-                <Link to="/vendas">
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-
-            <div className="mb-6">
-              <span className="text-3xl font-bold tracking-tight text-slate-900">
-                {formatCurrency(data?.metrics.pipelineValue || 0)}
-              </span>
-              <p className="text-sm text-slate-500 mt-1">Total em Pipeline</p>
-            </div>
-
-            <div className="flex-1 min-h-[200px] w-full mt-auto">
-              {data?.metrics?.funnelData && data.metrics.funnelData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={data.metrics.funnelData}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                  >
-                    <XAxis
-                      dataKey="stage"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 12 }}
-                      dy={10}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 12 }}
-                      tickFormatter={(val) => `R$${val / 1000}k`}
-                    />
-                    <Tooltip
-                      cursor={{ fill: '#f1f5f9' }}
-                      contentStyle={{
-                        borderRadius: '16px',
-                        border: 'none',
-                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                      }}
-                      formatter={(value: number) => [formatCurrency(value), 'Valor']}
-                    />
-                    <Bar
-                      dataKey="value"
-                      fill="currentColor"
-                      radius={[6, 6, 0, 0]}
-                      className="fill-primary"
-                      barSize={40}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full w-full flex items-center justify-center text-slate-400 text-sm pb-8">
-                  Dados insuficientes para o gráfico
                 </div>
               )}
             </div>
