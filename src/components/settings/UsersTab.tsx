@@ -33,7 +33,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, UserPlus, UserX, UserCheck, MoreHorizontal } from 'lucide-react'
+import { Loader2, UserPlus, UserX, UserCheck, MoreHorizontal, Edit } from 'lucide-react'
+import { EditUserDialog } from './EditUserDialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +59,7 @@ export function UsersTab() {
   const [inviteRole, setInviteRole] = useState<Role>('Vendedor')
   const [inviting, setInviting] = useState(false)
   const [isInviteOpen, setIsInviteOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<Profile | null>(null)
 
   const loadData = async () => {
     setLoading(true)
@@ -251,6 +253,9 @@ export function UsersTab() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>Ações</DropdownMenuLabel>
                               <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => setEditingUser(profile)}>
+                                <Edit className="mr-2 h-4 w-4" /> Editar Usuário
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleStatusChange(profile.id, profile.status)}
                               >
@@ -334,6 +339,21 @@ export function UsersTab() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <EditUserDialog
+        user={editingUser}
+        isOpen={!!editingUser}
+        onOpenChange={(open) => !open && setEditingUser(null)}
+        onSave={async (data, file) => {
+          // Mantendo com dados mockados conforme solicitado para o fluxo de edição
+          await new Promise((resolve) => setTimeout(resolve, 800))
+          toast({
+            title: 'Usuário atualizado',
+            description: 'As alterações foram salvas com sucesso (Simulação).',
+          })
+          loadData()
+        }}
+      />
     </div>
   )
 }
