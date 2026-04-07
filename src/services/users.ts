@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { Database } from '@/lib/supabase/types'
 
-type Profile = Database['public']['Tables']['profiles']['Row']
+type Profile = Database['public']['Tables']['profiles']['Row'] & { avatar?: string | null }
 
 export const getUsers = async () => {
   const { data, error } = await supabase
@@ -42,4 +42,44 @@ export const inviteUser = async (email: string, role: string) => {
   })
   if (error) throw error
   return data
+}
+
+export const updateUserProfile = async (
+  id: string,
+  data: { name: string; email: string; role: Database['public']['Enums']['user_role'] },
+  file: File | null,
+  adminId: string,
+) => {
+  let avatarUrl = undefined
+
+  if (file) {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${id}-${Math.random().toString(36).substring(7)}.${fileExt}`
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file, { upsert: true })
+
+    if (uploadError) throw uploadError
+
+    const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName)
+
+    avatarUrl = publicUrlData.publicUrl
+  }
+
+  const updateData: any = {
+    name: data.name,
+    role: data.role,
+  }
+
+  if (avatarUrl !== undefined) {
+    updateData.avatar = avatarUrl
+  }
+
+  const { error } = await supabase.from('profiles').update(updateData).eq('id', id)
+  if (error) throw error
+
+  await supabase.from('audit_logs').insert({
+    user_id: adminId,
+    action: `Atualizou o perfil do usuário (ID: ${id})`,
+  })
 }

@@ -31,7 +31,7 @@ import {
 import { UploadCloud, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type Profile = Database['public']['Tables']['profiles']['Row']
+type Profile = Database['public']['Tables']['profiles']['Row'] & { avatar?: string | null }
 
 const formSchema = z.object({
   name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
@@ -61,7 +61,7 @@ export function EditUserDialog({ user, isOpen, onOpenChange, onSave }: EditUserD
     if (user && isOpen) {
       form.reset({ name: user.name || '', email: user.email || '', role: user.role })
       setFile(null)
-      setPreview(null)
+      setPreview(user.avatar || null)
     }
   }, [user, isOpen, form])
 

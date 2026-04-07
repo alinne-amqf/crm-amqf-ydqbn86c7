@@ -1,10 +1,25 @@
-import React, { useState, useEffect } from 'react'
-import { cn } from '@/lib/utils'
-import { toast } from '@/hooks/use-toast'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/hooks/use-auth'
+import { getUsers, inviteUser, updateUserProfile } from '@/services/users'
+import { getAuditLogs } from '@/services/auditLogs'
+import { EditUserDialog } from '@/components/settings/EditUserDialog'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import { useToast } from '@/hooks/use-toast'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import {
   Select,
   SelectContent,
@@ -12,221 +27,253 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card'
-import { UsersTab } from '@/components/settings/UsersTab'
-import { getSystemSettings, updateSystemSettings, SystemSettings } from '@/services/systemSettings'
-import { Loader2 } from 'lucide-react'
+import { Database } from '@/lib/supabase/types'
 
-const sidebarNavItems = [
-  { title: 'Geral', id: 'general' },
-  { title: 'Usuários', id: 'users' },
-  { title: 'Segurança', id: 'security' },
-]
+type Profile = Database['public']['Tables']['profiles']['Row'] & { avatar?: string | null }
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('general')
-  const [settings, setSettings] = useState<SystemSettings | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
+  const { user } = useAuth()
+  const { toast } = useToast()
 
-  // Form states
-  const [systemName, setSystemName] = useState('CRM AMQF')
-  const [timezone, setTimezone] = useState('america-sao_paulo')
-  const [language, setLanguage] = useState('pt-BR')
+  const [users, setUsers] = useState<Profile[]>([])
+  const [logs, setLogs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('Vendedor')
+  const [inviting, setInviting] = useState(false)
+
+  const [editingUser, setEditingUser] = useState<Profile | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const [usersData, logsData] = await Promise.all([getUsers(), getAuditLogs()])
+      setUsers(usersData as Profile[])
+      setLogs(logsData)
+    } catch (error) {
+      console.error(error)
+      toast({ title: 'Erro', description: 'Erro ao carregar dados.', variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const data = await getSystemSettings()
-        if (data) {
-          setSettings(data)
-          setSystemName(data.system_name)
-          setTimezone(data.timezone)
-          setLanguage(data.language)
-        }
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchSettings()
+    loadData()
   }, [])
 
-  const handleSaveGeneral = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!settings) return
-
-    setIsSaving(true)
+  const handleInvite = async () => {
+    if (!inviteEmail) return
     try {
-      await updateSystemSettings(settings.id, {
-        system_name: systemName,
-        timezone,
-        language,
-      })
+      setInviting(true)
+      await inviteUser(inviteEmail, inviteRole)
+      toast({ title: 'Sucesso', description: 'Convite enviado com sucesso.' })
+      setInviteEmail('')
+      loadData()
+    } catch (error: any) {
       toast({
-        title: 'Configurações salvas',
-        description: 'As configurações gerais foram atualizadas com sucesso.',
-      })
-    } catch (error) {
-      toast({
-        title: 'Erro ao salvar',
-        description: 'Ocorreu um erro ao atualizar as configurações.',
+        title: 'Erro',
+        description: error.message || 'Erro ao enviar convite.',
         variant: 'destructive',
       })
     } finally {
-      setIsSaving(false)
+      setInviting(false)
     }
   }
 
-  const handleSaveSecurity = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast({
-      title: 'Segurança atualizada',
-      description: 'As preferências de segurança foram salvas.',
-    })
+  const handleEditUser = (u: Profile) => {
+    setEditingUser(u)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleSaveUser = async (data: any, file: File | null) => {
+    if (!editingUser || !user) return
+    try {
+      await updateUserProfile(editingUser.id, data, file, user.id)
+      toast({ title: 'Sucesso', description: 'Usuário atualizado com sucesso.' })
+      loadData()
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao atualizar usuário.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const getInitials = (name: string | null, email: string) => {
+    if (name) {
+      const parts = name.split(' ')
+      if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase()
+      return name.substring(0, 2).toUpperCase()
+    }
+    return email.substring(0, 2).toUpperCase()
   }
 
   return (
-    <div className="space-y-6 p-6 md:p-10 pb-16 md:block">
-      <div className="space-y-0.5">
-        <h2 className="text-2xl font-bold tracking-tight">Configurações</h2>
-        <p className="text-muted-foreground">
-          Gerencie as configurações da sua conta e preferências do sistema.
+    <div className="container mx-auto p-6 max-w-6xl space-y-8 animate-fade-in-up">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Configurações</h1>
+        <p className="text-muted-foreground mt-2">
+          Gerencie usuários, permissões e configurações do sistema.
         </p>
       </div>
-      <Separator className="my-6" />
-      <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-        <aside className="lg:w-1/5">
-          <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 overflow-x-auto pb-2 lg:pb-0">
-            {sidebarNavItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={activeTab === item.id ? 'secondary' : 'ghost'}
-                className={cn(
-                  'justify-start whitespace-nowrap',
-                  activeTab === item.id
-                    ? 'bg-muted hover:bg-muted'
-                    : 'hover:bg-transparent hover:underline',
-                )}
-                onClick={() => setActiveTab(item.id)}
-              >
-                {item.title}
-              </Button>
-            ))}
-          </nav>
-        </aside>
-        <div className="flex-1 lg:max-w-2xl">
-          {activeTab === 'general' && (
-            <form onSubmit={handleSaveGeneral}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Geral</CardTitle>
-                  <CardDescription>Configurações básicas do sistema.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {isLoading ? (
-                    <div className="flex justify-center p-4">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="systemName">Nome do Sistema</Label>
-                        <Input
-                          id="systemName"
-                          value={systemName}
-                          onChange={(e) => setSystemName(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="timezone">Fuso Horário</Label>
-                        <Select value={timezone} onValueChange={setTimezone}>
-                          <SelectTrigger id="timezone">
-                            <SelectValue placeholder="Selecione um fuso horário" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="america-sao_paulo">
-                              America/Sao_Paulo (BRT)
-                            </SelectItem>
-                            <SelectItem value="america-new_york">America/New_York (EST)</SelectItem>
-                            <SelectItem value="europe-london">Europe/London (GMT)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="language">Idioma</Label>
-                        <Select value={language} onValueChange={setLanguage}>
-                          <SelectTrigger id="language">
-                            <SelectValue placeholder="Selecione um idioma" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
-                            <SelectItem value="en-US">English (US)</SelectItem>
-                            <SelectItem value="es-ES">Español</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" disabled={isLoading || isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Salvar alterações
-                  </Button>
-                </CardFooter>
-              </Card>
-            </form>
-          )}
 
-          {activeTab === 'users' && <UsersTab />}
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="users">Usuários e Permissões</TabsTrigger>
+          <TabsTrigger value="audit">Logs de Auditoria</TabsTrigger>
+        </TabsList>
 
-          {activeTab === 'security' && (
-            <form onSubmit={handleSaveSecurity}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Segurança</CardTitle>
-                  <CardDescription>
-                    Gerencie as políticas de segurança da sua conta.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">Autenticação de Dois Fatores (2FA)</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Exija 2FA para todos os usuários ao fazer login.
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">Política de Senha Forte</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Exija senhas com no mínimo 8 caracteres, números e símbolos.
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit">Salvar preferências</Button>
-                </CardFooter>
-              </Card>
-            </form>
-          )}
-        </div>
-      </div>
+        <TabsContent value="users" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Convidar Usuário</CardTitle>
+              <CardDescription>Envie um convite para novos membros da equipe.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 items-end">
+                <div className="grid gap-2 flex-1 max-w-sm">
+                  <label className="text-sm font-medium">E-mail</label>
+                  <Input
+                    placeholder="email@empresa.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Papel</label>
+                  <Select value={inviteRole} onValueChange={setInviteRole}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Papel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Admin">Administrador</SelectItem>
+                      <SelectItem value="Gerente">Gerente</SelectItem>
+                      <SelectItem value="Vendedor">Vendedor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleInvite} disabled={inviting}>
+                  {inviting ? 'Enviando...' : 'Enviar Convite'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Usuários Ativos</CardTitle>
+              <CardDescription>Gerencie os acessos e informações da sua equipe.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="py-6 text-center text-muted-foreground">Carregando...</div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Usuário</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Papel</TableHead>
+                        <TableHead>Adicionado em</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="flex items-center gap-3">
+                            <Avatar>
+                              <AvatarImage src={u.avatar || ''} />
+                              <AvatarFallback>{getInitials(u.name, u.email)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{u.name || 'Sem nome'}</div>
+                              <div className="text-sm text-muted-foreground">{u.email}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={u.status === 'Ativo' ? 'default' : 'secondary'}>
+                              {u.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{u.role}</Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {format(new Date(u.created_at), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditUser(u)}>
+                              Editar
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Logs de Auditoria</CardTitle>
+              <CardDescription>Histórico de ações importantes no sistema.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="py-6 text-center text-muted-foreground">Carregando...</div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data/Hora</TableHead>
+                        <TableHead>Usuário</TableHead>
+                        <TableHead>Ação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {logs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="whitespace-nowrap text-muted-foreground">
+                            {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm')}
+                          </TableCell>
+                          <TableCell>
+                            {log.profiles?.name || log.profiles?.email || 'Sistema'}
+                          </TableCell>
+                          <TableCell>{log.action}</TableCell>
+                        </TableRow>
+                      ))}
+                      {logs.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                            Nenhum log encontrado.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <EditUserDialog
+        user={editingUser}
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onSave={handleSaveUser}
+      />
     </div>
   )
 }
