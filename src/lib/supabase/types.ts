@@ -170,6 +170,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar: string | null
           created_at: string
           email: string
           id: string
@@ -179,6 +180,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar?: string | null
           created_at?: string
           email: string
           id: string
@@ -188,6 +190,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -463,6 +466,7 @@ export const Constants = {
 //   created_at: timestamp with time zone (not null, default: now())
 //   updated_at: timestamp with time zone (not null, default: now())
 //   status: text (not null, default: 'Ativo'::text)
+//   avatar: text (nullable)
 // Table: system_settings
 //   id: uuid (not null, default: gen_random_uuid())
 //   system_name: text (not null, default: 'CRM AMQF'::text)

@@ -43,9 +43,25 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { CustomerForm } from '@/components/CustomerForm'
 import { Customer } from '@/lib/types'
-import { getCustomers, createCustomer, updateCustomer, uploadAvatar } from '@/services/customers'
+import {
+  getCustomers,
+  createCustomer,
+  updateCustomer,
+  uploadAvatar,
+  deleteCustomer,
+} from '@/services/customers'
 import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
@@ -54,6 +70,7 @@ export default function Index() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const { signOut } = useAuth()
 
@@ -128,6 +145,20 @@ export default function Index() {
   const handleCloseSheet = () => {
     setIsSheetOpen(false)
     setTimeout(() => setEditingCustomer(null), 300)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!customerToDelete) return
+
+    try {
+      await deleteCustomer(customerToDelete.id)
+      setCustomers((prev) => prev.filter((c) => c.id !== customerToDelete.id))
+      toast.success('Cliente excluído com sucesso!')
+    } catch (error: any) {
+      toast.error('Erro ao excluir cliente', { description: error.message })
+    } finally {
+      setCustomerToDelete(null)
+    }
   }
 
   const handleLogout = async () => {
@@ -281,7 +312,13 @@ export default function Index() {
                           Editar cliente
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive">
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setCustomerToDelete(customer)
+                          }}
+                        >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Excluir
                         </DropdownMenuItem>
@@ -328,6 +365,30 @@ export default function Index() {
           />
         </SheetContent>
       </Sheet>
+
+      <AlertDialog
+        open={!!customerToDelete}
+        onOpenChange={(open) => !open && setCustomerToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Cliente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o cliente <strong>{customerToDelete?.name}</strong>?
+              Esta ação não pode ser desfeita e removerá todos os dados associados a este cliente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

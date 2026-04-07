@@ -88,6 +88,11 @@ export const updateCustomer = async (
   } as Customer
 }
 
+export const deleteCustomer = async (id: string) => {
+  const { error } = await supabase.from('customers').delete().eq('id', id)
+  if (error) throw error
+}
+
 export const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt'>) => {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('User not authenticated')
