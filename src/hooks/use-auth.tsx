@@ -3,9 +3,11 @@ import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
 
+export type ExtendedProfile = Profile & { avatar?: string | null }
+
 interface AuthContextType {
   user: User | null
-  profile: Profile | null
+  profile: ExtendedProfile | null
   session: Session | null
   signUp: (email: string, password: string) => Promise<{ data: any; error: any }>
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>
@@ -25,7 +27,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState<ExtendedProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(true)
@@ -74,9 +76,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               email: data.email,
               name: data.name,
               role: data.role,
+              avatar: data.avatar,
               createdAt: data.created_at,
               updatedAt: data.updated_at,
-            })
+            } as any)
           } else if (error) {
             console.error('Error fetching profile:', error)
             setProfile(null)
@@ -96,8 +99,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     fetchProfile()
 
+    // Real-time listener para atualizações do perfil
+    const channel = supabase
+      .channel(`profile-changes-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('[useAuth] Perfil atualizado via realtime:', payload.new)
+          if (isMounted) {
+            setProfile((prev) => {
+              if (!prev) return prev
+              return {
+                ...prev,
+                name: payload.new.name,
+                role: payload.new.role,
+                avatar: payload.new.avatar,
+              } as any
+            })
+          }
+        },
+      )
+      .subscribe()
+
     return () => {
       isMounted = false
+      supabase.removeChannel(channel)
     }
   }, [user])
 

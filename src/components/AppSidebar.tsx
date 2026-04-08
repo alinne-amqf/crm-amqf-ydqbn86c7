@@ -95,8 +95,12 @@ export function AppSidebar() {
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage
-                      src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`}
+                      src={
+                        profile?.avatar ||
+                        `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`
+                      }
                       alt={profile?.name || ''}
+                      className="object-cover"
                     />
                     <AvatarFallback className="rounded-lg">
                       {profile?.name?.charAt(0) || 'U'}
@@ -119,8 +123,12 @@ export function AppSidebar() {
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage
-                        src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`}
+                        src={
+                          profile?.avatar ||
+                          `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`
+                        }
                         alt={profile?.name || ''}
+                        className="object-cover"
                       />
                       <AvatarFallback className="rounded-lg">
                         {profile?.name?.charAt(0) || 'U'}
