@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
@@ -6,8 +6,9 @@ import {
   BarChart3,
   Settings,
   LifeBuoy,
-  Shield,
   ListTodo,
+  LogOut,
+  ChevronsUpDown,
 } from 'lucide-react'
 
 import {
@@ -23,10 +24,19 @@ import {
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/use-auth'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export function AppSidebar() {
   const location = useLocation()
-  const { profile } = useAuth()
+  const navigate = useNavigate()
+  const { profile, signOut } = useAuth()
 
   const navItems = [
     { title: 'Dashboard', icon: LayoutDashboard, url: '/dashboard' },
@@ -36,6 +46,11 @@ export function AppSidebar() {
     { title: 'Relatórios', icon: BarChart3, url: '/relatorios' },
     { title: 'Configurações', icon: Settings, url: '/settings' },
   ]
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   return (
     <Sidebar variant="inset">
@@ -69,20 +84,68 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t border-border/50">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarImage
-              src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`}
-            />
-            <AvatarFallback>{profile?.name?.charAt(0) || 'U'}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-medium truncate">{profile?.name || 'Usuário'}</span>
-            <span className="text-xs text-muted-foreground truncate">{profile?.email}</span>
-            <span className="text-[10px] text-primary font-medium">{profile?.role}</span>
-          </div>
-        </div>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                >
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage
+                      src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`}
+                      alt={profile?.name || ''}
+                    />
+                    <AvatarFallback className="rounded-lg">
+                      {profile?.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{profile?.name || 'Usuário'}</span>
+                    <span className="truncate text-xs">{profile?.email}</span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                side="bottom"
+                align="end"
+                sideOffset={4}
+              >
+                <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage
+                        src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`}
+                        alt={profile?.name || ''}
+                      />
+                      <AvatarFallback className="rounded-lg">
+                        {profile?.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">{profile?.name || 'Usuário'}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {profile?.role}
+                      </span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sair</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )

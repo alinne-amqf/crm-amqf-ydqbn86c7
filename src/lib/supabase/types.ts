@@ -40,7 +40,6 @@ export type Database = {
       }
       customers: {
         Row: {
-          avatar: string | null
           company: string | null
           created_at: string
           customer_type: string
@@ -54,7 +53,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          avatar?: string | null
           company?: string | null
           created_at?: string
           customer_type?: string
@@ -68,7 +66,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          avatar?: string | null
           company?: string | null
           created_at?: string
           customer_type?: string
@@ -434,7 +431,6 @@ export const Constants = {
 //   phone: text (nullable)
 //   company: text (nullable)
 //   status: text (not null, default: 'Lead'::text)
-//   avatar: text (nullable)
 //   created_at: timestamp with time zone (not null, default: now())
 //   updated_at: timestamp with time zone (not null, default: now())
 //   customer_type: text (not null, default: 'B2C'::text)
