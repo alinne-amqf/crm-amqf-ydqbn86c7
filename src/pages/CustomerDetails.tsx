@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -245,9 +245,8 @@ export default function CustomerDetails() {
             <div className="h-24 bg-gradient-to-r from-slate-100 to-slate-200 w-full absolute top-0 left-0 right-0 z-0"></div>
             <CardHeader className="text-center pb-2 pt-12 relative z-10">
               <Avatar className="h-24 w-24 mx-auto mb-4 border-4 border-white shadow-md bg-white">
-                <AvatarImage src={customer.avatar} alt={customer.name} />
-                <AvatarFallback className="text-3xl bg-primary/5 text-primary">
-                  {customer.name.charAt(0)}
+                <AvatarFallback className="text-4xl bg-primary/10 text-primary font-semibold">
+                  {customer.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <CardTitle className="text-2xl font-bold text-slate-900">{customer.name}</CardTitle>

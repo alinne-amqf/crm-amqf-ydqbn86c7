@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Loader2, Camera, User } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 import {
   Form,
@@ -15,7 +15,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Customer } from '@/lib/types'
 
 const customerSchema = z
@@ -44,17 +43,12 @@ type CustomerFormValues = z.infer<typeof customerSchema>
 
 interface CustomerFormProps {
   initialData?: Customer | null
-  onSubmit: (
-    customer: Omit<Customer, 'id' | 'createdAt'>,
-    avatarFile: File | null,
-  ) => Promise<void> | void
+  onSubmit: (customer: Omit<Customer, 'id' | 'createdAt'>) => Promise<void> | void
   onCancel: () => void
 }
 
 export function CustomerForm({ initialData, onSubmit, onCancel }: CustomerFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(initialData?.avatar || null)
 
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
@@ -79,38 +73,23 @@ export function CustomerForm({ initialData, onSubmit, onCancel }: CustomerFormPr
         company: initialData.company || '',
         document: initialData.document || '',
       })
-      setPreviewUrl(initialData.avatar || null)
-      setAvatarFile(null)
     }
   }, [initialData, form])
 
   const customerType = form.watch('customerType')
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setAvatarFile(file)
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
-    }
-  }
-
   const handleSubmit = async (values: CustomerFormValues) => {
     setIsSubmitting(true)
     try {
-      await onSubmit(
-        {
-          name: values.name,
-          email: values.email,
-          phone: values.phone || null,
-          customerType: values.customerType,
-          company: values.customerType === 'B2B' ? values.company || null : null,
-          document: values.document || null,
-          status: initialData?.status || 'Lead',
-          avatar: initialData?.avatar || null,
-        },
-        avatarFile,
-      )
+      await onSubmit({
+        name: values.name,
+        email: values.email,
+        phone: values.phone || null,
+        customerType: values.customerType,
+        company: values.customerType === 'B2B' ? values.company || null : null,
+        document: values.document || null,
+        status: initialData?.status || 'Lead',
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -122,33 +101,6 @@ export function CustomerForm({ initialData, onSubmit, onCancel }: CustomerFormPr
         onSubmit={form.handleSubmit(handleSubmit)}
         className="space-y-5 mt-6 animate-fade-in pb-8"
       >
-        <div className="flex flex-col items-center mb-6">
-          <div
-            className="relative group cursor-pointer"
-            onClick={() => document.getElementById('avatar-upload')?.click()}
-          >
-            <Avatar className="h-24 w-24 border-2 border-dashed border-slate-300 transition-colors group-hover:border-primary shadow-sm">
-              <AvatarImage src={previewUrl || ''} className="object-cover" />
-              <AvatarFallback className="bg-slate-50">
-                <User className="h-10 w-10 text-slate-400" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="h-8 w-8 text-white" />
-            </div>
-            <input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-          </div>
-          <span className="text-xs text-muted-foreground mt-2 font-medium">
-            Clique para alterar a foto
-          </span>
-        </div>
-
         <FormField
           control={form.control}
           name="customerType"

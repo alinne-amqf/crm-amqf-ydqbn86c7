@@ -34,7 +34,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
@@ -55,13 +55,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { CustomerForm } from '@/components/CustomerForm'
 import { Customer } from '@/lib/types'
-import {
-  getCustomers,
-  createCustomer,
-  updateCustomer,
-  uploadAvatar,
-  deleteCustomer,
-} from '@/services/customers'
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/customers'
 import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
@@ -101,30 +95,14 @@ export default function Index() {
     )
   }, [customers, searchQuery])
 
-  const handleSaveCustomer = async (
-    customerData: Omit<Customer, 'id' | 'createdAt'>,
-    file: File | null,
-  ) => {
+  const handleSaveCustomer = async (customerData: Omit<Customer, 'id' | 'createdAt'>) => {
     try {
-      let avatarUrl = customerData.avatar
-      if (file) {
-        avatarUrl = await uploadAvatar(file)
-      }
-
       if (editingCustomer) {
-        const updated = await updateCustomer(editingCustomer.id, {
-          ...customerData,
-          avatar: avatarUrl,
-        })
+        const updated = await updateCustomer(editingCustomer.id, customerData)
         setCustomers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
         toast.success('Cliente atualizado com sucesso!')
       } else {
-        const created = await createCustomer({
-          ...customerData,
-          avatar:
-            avatarUrl ||
-            `https://img.usecurling.com/ppl/thumbnail?seed=${Math.floor(Math.random() * 1000)}`,
-        })
+        const created = await createCustomer(customerData)
         setCustomers((prev) => [created, ...prev])
         toast.success('Cliente cadastrado com sucesso!', {
           description: `${created.name} foi adicionado à sua base de clientes.`,
@@ -244,13 +222,8 @@ export default function Index() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border border-slate-100">
-                        <AvatarImage
-                          src={customer.avatar || ''}
-                          alt={customer.name}
-                          className="object-cover"
-                        />
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {customer.name.charAt(0)}
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {customer.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">

@@ -16,7 +16,6 @@ export const getCustomers = async () => {
     phone: d.phone,
     company: d.company,
     status: d.status,
-    avatar: d.avatar,
     customerType: d.customer_type || 'B2C',
     document: d.document,
     createdAt: d.created_at,
@@ -35,26 +34,10 @@ export const getCustomerById = async (id: string) => {
     phone: data.phone,
     company: data.company,
     status: data.status,
-    avatar: data.avatar,
     customerType: data.customer_type || 'B2C',
     document: data.document,
     createdAt: data.created_at,
   } as Customer
-}
-
-export const uploadAvatar = async (file: File): Promise<string> => {
-  const fileExt = file.name.split('.').pop()
-  const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`
-  const filePath = `${fileName}`
-
-  const { error: uploadError } = await supabase.storage
-    .from('avatars')
-    .upload(filePath, file, { upsert: true })
-
-  if (uploadError) throw uploadError
-
-  const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
-  return data.publicUrl
 }
 
 export const updateCustomer = async (
@@ -81,7 +64,6 @@ export const updateCustomer = async (
     phone: data.phone,
     company: data.company,
     status: data.status,
-    avatar: data.avatar,
     customerType: data.customer_type || 'B2C',
     document: data.document,
     createdAt: data.created_at,
@@ -107,7 +89,6 @@ export const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt'
         phone: customer.phone,
         company: customer.company,
         status: customer.status,
-        avatar: customer.avatar,
         customer_type: customer.customerType,
         document: customer.document,
       },
@@ -124,7 +105,6 @@ export const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt'
     phone: data.phone,
     company: data.company,
     status: data.status,
-    avatar: data.avatar,
     customerType: data.customer_type,
     document: data.document,
     createdAt: data.created_at,
