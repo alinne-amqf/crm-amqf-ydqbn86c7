@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { getUsers, updateUserStatus, updateUserRole, inviteUser } from '@/services/users'
+import {
+  getUsers,
+  updateUserStatus,
+  updateUserRole,
+  inviteUser,
+  updateUserProfile,
+} from '@/services/users'
 import { getAuditLogs } from '@/services/auditLogs'
 import { Database } from '@/lib/supabase/types'
 import {
@@ -243,35 +249,43 @@ export function UsersTab() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {profile.id !== user?.id && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => setEditingUser(profile)}>
-                                <Edit className="mr-2 h-4 w-4" /> Editar Usuário
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleStatusChange(profile.id, profile.status)}
-                              >
-                                {profile.status === 'Ativo' ? (
-                                  <>
-                                    <UserX className="mr-2 h-4 w-4" /> Desativar Usuário
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserCheck className="mr-2 h-4 w-4" /> Ativar Usuário
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setEditingUser(profile)}
+                            title="Editar Usuário"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {profile.id !== user?.id && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleStatusChange(profile.id, profile.status)}
+                                >
+                                  {profile.status === 'Ativo' ? (
+                                    <>
+                                      <UserX className="mr-2 h-4 w-4" /> Desativar Usuário
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCheck className="mr-2 h-4 w-4" /> Ativar Usuário
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -345,13 +359,31 @@ export function UsersTab() {
         isOpen={!!editingUser}
         onOpenChange={(open) => !open && setEditingUser(null)}
         onSave={async (data, file) => {
-          // Mantendo com dados mockados conforme solicitado para o fluxo de edição
-          await new Promise((resolve) => setTimeout(resolve, 800))
-          toast({
-            title: 'Usuário atualizado',
-            description: 'As alterações foram salvas com sucesso (Simulação).',
-          })
-          loadData()
+          try {
+            let ip = 'Desconhecido'
+            try {
+              const res = await fetch('https://api.ipify.org?format=json')
+              if (res.ok) {
+                const json = await res.json()
+                ip = json.ip || 'Desconhecido'
+              }
+            } catch (err) {
+              // Ignore se falhar ao obter IP
+            }
+
+            await updateUserProfile(editingUser!.id, data, file, user?.id || '', ip)
+            toast({
+              title: 'Usuário atualizado',
+              description: 'As alterações foram salvas com sucesso.',
+            })
+            loadData()
+          } catch (error: any) {
+            toast({
+              title: 'Erro ao atualizar',
+              description: error.message || 'Falha ao salvar as alterações do usuário.',
+              variant: 'destructive',
+            })
+          }
         }}
       />
     </div>

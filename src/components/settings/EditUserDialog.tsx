@@ -37,6 +37,7 @@ const formSchema = z.object({
   name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
   email: z.string().email('E-mail inválido'),
   role: z.enum(['Admin', 'Gerente', 'Vendedor']),
+  status: z.enum(['Ativo', 'Inativo']),
 })
 
 interface EditUserDialogProps {
@@ -54,12 +55,17 @@ export function EditUserDialog({ user, isOpen, onOpenChange, onSave }: EditUserD
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: '', email: '', role: 'Vendedor' },
+    defaultValues: { name: '', email: '', role: 'Vendedor', status: 'Ativo' },
   })
 
   useEffect(() => {
     if (user && isOpen) {
-      form.reset({ name: user.name || '', email: user.email || '', role: user.role })
+      form.reset({
+        name: user.name || '',
+        email: user.email || '',
+        role: user.role,
+        status: (user.status as 'Ativo' | 'Inativo') || 'Ativo',
+      })
       setFile(null)
       setPreview(user.avatar || null)
     }
@@ -180,28 +186,52 @@ export function EditUserDialog({ user, isOpen, onOpenChange, onSave }: EditUserD
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nível de Acesso</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um papel" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Admin">Administrador</SelectItem>
-                      <SelectItem value="Gerente">Gerente</SelectItem>
-                      <SelectItem value="Vendedor">Vendedor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nível de Acesso</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um papel" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Admin">Administrador</SelectItem>
+                        <SelectItem value="Gerente">Gerente</SelectItem>
+                        <SelectItem value="Vendedor">Vendedor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Ativo">Ativo</SelectItem>
+                        <SelectItem value="Inativo">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

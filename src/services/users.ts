@@ -46,9 +46,15 @@ export const inviteUser = async (email: string, role: string) => {
 
 export const updateUserProfile = async (
   id: string,
-  data: { name: string; email: string; role: Database['public']['Enums']['user_role'] },
+  data: {
+    name: string
+    email: string
+    role: Database['public']['Enums']['user_role']
+    status: string
+  },
   file: File | null,
   adminId: string,
+  ipAddress: string = 'Desconhecido',
 ) => {
   let avatarUrl = undefined
 
@@ -68,7 +74,9 @@ export const updateUserProfile = async (
 
   const updateData: any = {
     name: data.name,
+    email: data.email,
     role: data.role,
+    status: data.status,
   }
 
   if (avatarUrl !== undefined) {
@@ -80,6 +88,6 @@ export const updateUserProfile = async (
 
   await supabase.from('audit_logs').insert({
     user_id: adminId,
-    action: `Atualizou o perfil do usuário (ID: ${id})`,
+    action: `Atualizou o perfil do usuário (ID: ${id}) - IP Origem: ${ipAddress}`,
   })
 }
