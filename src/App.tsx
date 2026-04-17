@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { AuthProvider } from '@/hooks/use-auth'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import Index from './pages/Index'
 import CustomerDetails from './pages/CustomerDetails'
@@ -14,9 +14,28 @@ import TasksPage from './pages/Tasks'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import Layout from './components/Layout'
+import { useEffect } from 'react'
+import { supabase } from '@/lib/supabase/client'
+
+const MarkAccessed = () => {
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('profiles')
+        .update({ has_accessed: true } as any)
+        .eq('id', user.id)
+        .then()
+    }
+  }, [user])
+
+  return null
+}
 
 const App = () => (
   <AuthProvider>
+    <MarkAccessed />
     <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
       <TooltipProvider>
         <Toaster />

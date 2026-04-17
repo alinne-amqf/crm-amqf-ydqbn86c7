@@ -52,7 +52,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-type Profile = Database['public']['Tables']['profiles']['Row']
+type Profile = Database['public']['Tables']['profiles']['Row'] & { has_accessed?: boolean }
 type Role = Database['public']['Enums']['user_role']
 
 export function UsersTab() {
@@ -70,6 +70,8 @@ export function UsersTab() {
   const [editingUser, setEditingUser] = useState<Profile | null>(null)
   const [userToDeactivate, setUserToDeactivate] = useState<Profile | null>(null)
   const [isDeactivating, setIsDeactivating] = useState(false)
+  const [resendUser, setResendUser] = useState<Profile | null>(null)
+  const [isResending, setIsResending] = useState(false)
 
   const isAdmin = profiles.find((p) => p.id === user?.id)?.role === 'Admin'
 
@@ -251,17 +253,43 @@ export function UsersTab() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={profile.status === 'Ativo' ? 'default' : 'secondary'}>
-                          {profile.status}
-                        </Badge>
+                        {!profile.has_accessed && profile.status !== 'Inativo' ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-amber-50 text-amber-700 border-amber-200"
+                          >
+                            Cadastrado, Não Acessado
+                          </Badge>
+                        ) : (
+                          <Badge variant={profile.status === 'Ativo' ? 'default' : 'secondary'}>
+                            {profile.status}
+                          </Badge>
+                        )}
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
+                            {!profile.has_accessed ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs font-medium"
+                                onClick={() => setResendUser(profile)}
+                              >
+                                Reenviar Convite
+                              </Button>
+                            ) : (
+                              <Badge
+                                variant="secondary"
+                                className="bg-gray-100 text-gray-500 hover:bg-gray-100 font-normal whitespace-nowrap"
+                              >
+                                Já acessou
+                              </Badge>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700 opacity-100 visible flex"
+                              className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700 opacity-100 visible flex shrink-0"
                               onClick={() => setEditingUser(profile)}
                               title="Editar Usuário"
                             >
@@ -270,7 +298,7 @@ export function UsersTab() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50 opacity-100 visible flex"
+                              className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50 opacity-100 visible flex shrink-0"
                               onClick={() => setUserToDeactivate(profile)}
                               title="Remover Usuário"
                               disabled={profile.id === user?.id || profile.status === 'Inativo'}
@@ -346,6 +374,51 @@ export function UsersTab() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!resendUser} onOpenChange={(open) => !open && setResendUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reenviar Convite</AlertDialogTitle>
+            <AlertDialogDescription>
+              Reenviar convite para{' '}
+              <strong className="text-foreground">{resendUser?.name || resendUser?.email}</strong>?
+              Um novo link será enviado para{' '}
+              <strong className="text-foreground">{resendUser?.email}</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isResending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault()
+                if (!resendUser) return
+                setIsResending(true)
+                try {
+                  await inviteUser(resendUser.email, resendUser.role)
+                  toast({
+                    title: 'Sucesso',
+                    description: `Convite reenviado com sucesso para ${resendUser.name || resendUser.email}.`,
+                  })
+                  setResendUser(null)
+                  loadData()
+                } catch (error: any) {
+                  toast({
+                    title: 'Erro ao reenviar',
+                    description: error.message || 'Falha ao reenviar o convite.',
+                    variant: 'destructive',
+                  })
+                } finally {
+                  setIsResending(false)
+                }
+              }}
+              disabled={isResending}
+            >
+              {isResending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reenviar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={!!userToDeactivate}
