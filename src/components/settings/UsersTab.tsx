@@ -404,7 +404,9 @@ export function UsersTab() {
                       const json = await res.json()
                       ip = json.ip || 'Desconhecido'
                     }
-                  } catch (err) {}
+                  } catch (err) {
+                    // Ignore IP fetch error
+                  }
 
                   await deactivateUser(userToDeactivate.id, user?.id || '', ip)
                   toast({
