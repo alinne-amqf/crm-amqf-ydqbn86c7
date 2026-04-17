@@ -257,11 +257,11 @@ export function UsersTab() {
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-2">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 hover:bg-muted"
+                              className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                               onClick={() => setEditingUser(profile)}
                               title="Editar Usuário"
                             >
@@ -270,7 +270,7 @@ export function UsersTab() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
                               onClick={() => setUserToDeactivate(profile)}
                               title="Remover Usuário"
                               disabled={profile.id === user?.id || profile.status === 'Inativo'}
