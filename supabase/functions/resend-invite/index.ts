@@ -7,36 +7,27 @@ Deno.serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
-  )
-
-  const supabaseAdmin = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-  )
-
-  async function logAudit(
-    adminId: string,
-    targetUserId: string | null,
-    status: string,
-    action: string,
-  ) {
-    try {
-      await supabaseAdmin.from('audit_logs').insert({
-        user_id: adminId,
-        target_user_id: targetUserId,
-        status: status,
-        action: action,
-      })
-    } catch (e) {
-      console.error('Audit log failed', e)
-    }
-  }
-
   try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
+    )
+
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    )
+
+    const { user_id } = await req.json()
+
+    if (!user_id) {
+      return new Response(JSON.stringify({ error: 'user_id is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const {
       data: { user },
     } = await supabaseClient.auth.getUser()
@@ -47,87 +38,42 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const adminId = user.id
-
-    const { data: adminProfile } = await supabaseClient
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single()
-
-    if (adminProfile?.role !== 'Admin') {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const body = await req.json()
-    const { user_id } = body
-
-    if (!user_id) {
-      return new Response(JSON.stringify({ error: 'user_id is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const { data: targetProfile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('id, email, has_accessed, name')
-      .eq('id', user_id)
-      .single()
-
-    if (profileError || !targetProfile) {
-      await logAudit(adminId, user_id, 'falha', 'invite_resent - Usuário não encontrado')
-      return new Response(JSON.stringify({ error: 'Usuário não encontrado.' }), {
+    const { data: targetUser, error: fetchError } =
+      await supabaseAdmin.auth.admin.getUserById(user_id)
+    if (fetchError || !targetUser.user) {
+      return new Response(JSON.stringify({ error: 'User not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    if (targetProfile.has_accessed) {
-      await logAudit(
-        adminId,
-        user_id,
-        'falha',
-        'invite_resent - Usuário já realizou primeiro acesso',
-      )
-      return new Response(JSON.stringify({ error: 'Usuário já realizou primeiro acesso.' }), {
+    const email = targetUser.user.email
+    if (!email) {
+      return new Response(JSON.stringify({ error: 'User has no email' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const token = crypto.randomUUID()
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + 7)
+    const { data: inviteData, error: inviteError } =
+      await supabaseAdmin.auth.admin.inviteUserByEmail(email)
 
-    const { error: tokenError } = await supabaseAdmin.from('invitation_tokens').insert({
-      token,
-      user_id,
-      expires_at: expiresAt.toISOString(),
-    })
-
-    if (tokenError) {
-      await logAudit(adminId, user_id, 'falha', 'invite_resent - Erro ao gerar token')
-      throw tokenError
+    if (inviteError) {
+      return new Response(JSON.stringify({ error: inviteError.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const accessLink = `${Deno.env.get('VITE_SUPABASE_URL') || 'https://crmamqf.goskip.app'}/login?token=${token}`
-    console.log(`[EMAIL MOCK] To: ${targetProfile.email} - Access Link: ${accessLink}`)
-
-    await logAudit(adminId, user_id, 'sucesso', 'invite_resent')
-
     return new Response(
-      JSON.stringify({ success: true, message: 'Convite reenviado com sucesso.' }),
+      JSON.stringify({ message: 'Invite resent successfully', data: inviteData }),
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     )
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
