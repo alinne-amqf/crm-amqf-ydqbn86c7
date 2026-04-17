@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import {
   getUsers,
-  updateUserStatus,
   updateUserRole,
   inviteUser,
   updateUserProfile,
@@ -40,7 +39,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, UserPlus, UserX, UserCheck, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { Loader2, UserPlus, Edit, Trash2 } from 'lucide-react'
 import { EditUserDialog } from './EditUserDialog'
 import {
   AlertDialog,
@@ -52,14 +51,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Role = Database['public']['Enums']['user_role']
@@ -79,6 +70,8 @@ export function UsersTab() {
   const [editingUser, setEditingUser] = useState<Profile | null>(null)
   const [userToDeactivate, setUserToDeactivate] = useState<Profile | null>(null)
   const [isDeactivating, setIsDeactivating] = useState(false)
+
+  const isAdmin = profiles.find((p) => p.id === user?.id)?.role === 'Admin'
 
   const loadData = async () => {
     setLoading(true)
@@ -119,17 +112,6 @@ export function UsersTab() {
     }
   }
 
-  const handleStatusChange = async (profileId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'Ativo' ? 'Inativo' : 'Ativo'
-    try {
-      await updateUserStatus(profileId, newStatus, user?.id || '')
-      toast({ title: 'Status atualizado' })
-      loadData()
-    } catch (error) {
-      toast({ title: 'Erro ao atualizar status', variant: 'destructive' })
-    }
-  }
-
   const handleRoleChange = async (profileId: string, newRole: Role) => {
     try {
       await updateUserRole(profileId, newRole, user?.id || '')
@@ -157,58 +139,67 @@ export function UsersTab() {
               </p>
             </div>
 
-            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" /> Convidar Usuário
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <form onSubmit={handleInvite}>
-                  <DialogHeader>
-                    <DialogTitle>Convidar Membro</DialogTitle>
-                    <DialogDescription>
-                      Envie um convite para adicionar um novo membro à plataforma.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">E-mail</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="nome@empresa.com"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                        required
-                      />
+            {isAdmin && (
+              <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="mr-2 h-4 w-4" /> Convidar Usuário
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <form onSubmit={handleInvite}>
+                    <DialogHeader>
+                      <DialogTitle>Convidar Membro</DialogTitle>
+                      <DialogDescription>
+                        Envie um convite para adicionar um novo membro à plataforma.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">E-mail</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="nome@empresa.com"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="role">Nível de Acesso</Label>
+                        <Select
+                          value={inviteRole}
+                          onValueChange={(val: Role) => setInviteRole(val)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um papel" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Admin">Administrador</SelectItem>
+                            <SelectItem value="Gerente">Gerente</SelectItem>
+                            <SelectItem value="Vendedor">Vendedor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="role">Nível de Acesso</Label>
-                      <Select value={inviteRole} onValueChange={(val: Role) => setInviteRole(val)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um papel" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Admin">Administrador</SelectItem>
-                          <SelectItem value="Gerente">Gerente</SelectItem>
-                          <SelectItem value="Vendedor">Vendedor</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsInviteOpen(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={inviting}>
-                      {inviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Enviar Convite
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsInviteOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={inviting}>
+                        {inviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Enviar Convite
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           <div className="rounded-md border bg-card">
@@ -219,19 +210,22 @@ export function UsersTab() {
                   <TableHead>Email</TableHead>
                   <TableHead>Papel</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  {isAdmin && <TableHead className="text-right w-[100px]">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
                       <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ) : profiles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={isAdmin ? 5 : 4}
+                      className="h-24 text-center text-muted-foreground"
+                    >
                       Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>
@@ -244,7 +238,7 @@ export function UsersTab() {
                         <Select
                           value={profile.role}
                           onValueChange={(val: Role) => handleRoleChange(profile.id, val)}
-                          disabled={profile.id === user?.id}
+                          disabled={!isAdmin || profile.id === user?.id}
                         >
                           <SelectTrigger className="w-32 h-8 text-xs">
                             <SelectValue />
@@ -261,55 +255,31 @@ export function UsersTab() {
                           {profile.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setEditingUser(profile)}
-                            title="Editar Usuário"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => setUserToDeactivate(profile)}
-                            title="Remover Usuário"
-                            disabled={profile.id === user?.id || profile.status === 'Inativo'}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                          {profile.id !== user?.id && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleStatusChange(profile.id, profile.status)}
-                                >
-                                  {profile.status === 'Ativo' ? (
-                                    <>
-                                      <UserX className="mr-2 h-4 w-4" /> Desativar Usuário
-                                    </>
-                                  ) : (
-                                    <>
-                                      <UserCheck className="mr-2 h-4 w-4" /> Ativar Usuário
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                      </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-muted"
+                              onClick={() => setEditingUser(profile)}
+                              title="Editar Usuário"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => setUserToDeactivate(profile)}
+                              title="Remover Usuário"
+                              disabled={profile.id === user?.id || profile.status === 'Inativo'}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
