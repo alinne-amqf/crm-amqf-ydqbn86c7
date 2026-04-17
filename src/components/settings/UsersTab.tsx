@@ -4,10 +4,10 @@ import {
   getUsers,
   updateUserRole,
   inviteUser,
-  resendInvite,
   updateUserProfile,
   deactivateUser,
 } from '@/services/users'
+import { supabase } from '@/lib/supabase/client'
 import { getAuditLogs } from '@/services/auditLogs'
 import { Database } from '@/lib/supabase/types'
 import {
@@ -75,6 +75,77 @@ export function UsersTab() {
   const [isResending, setIsResending] = useState(false)
 
   const isAdmin = profiles.find((p) => p.id === user?.id)?.role === 'Admin'
+
+  const handleResendInvite = async (
+    userId: string,
+    userEmail: string,
+    userName?: string | null,
+  ) => {
+    setIsResending(true)
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData.session?.access_token
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resend-invite`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ user_id: userId }),
+        },
+      )
+
+      if (response.ok) {
+        toast({
+          title: 'Sucesso',
+          description: `Convite reenviado com sucesso para ${userName || userEmail}.`,
+        })
+        setResendUser(null)
+        loadData()
+      } else {
+        let errorData: any = {}
+        let errorText = ''
+        try {
+          errorText = await response.text()
+          errorData = JSON.parse(errorText)
+        } catch (e) {
+          // ignore
+        }
+        const errorMsg = errorData?.error || errorData?.message || errorText
+
+        if (response.status === 400) {
+          toast({
+            title: 'Erro',
+            description: errorMsg || 'Usuário já acessou o sistema.',
+            variant: 'destructive',
+          })
+        } else if (response.status === 404) {
+          toast({
+            title: 'Erro',
+            description: errorMsg || 'Usuário nao encontrado.',
+            variant: 'destructive',
+          })
+        } else {
+          toast({
+            title: 'Erro',
+            description: errorMsg || 'Erro na requisição.',
+            variant: 'destructive',
+          })
+        }
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Erro ao conectar. Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsResending(false)
+    }
+  }
 
   const loadData = async () => {
     setLoading(true)
@@ -270,7 +341,7 @@ export function UsersTab() {
                       {isAdmin && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {!profile.has_accessed ? (
+                            {profile.status === 'pending_first_login' || !profile.has_accessed ? (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -284,7 +355,7 @@ export function UsersTab() {
                                 variant="secondary"
                                 className="bg-gray-100 text-gray-500 hover:bg-gray-100 font-normal whitespace-nowrap"
                               >
-                                Já acessou
+                                Ja acessou
                               </Badge>
                             )}
                             <Button
@@ -381,10 +452,8 @@ export function UsersTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reenviar Convite</AlertDialogTitle>
             <AlertDialogDescription>
-              Reenviar convite para{' '}
-              <strong className="text-foreground">{resendUser?.name || resendUser?.email}</strong>?
-              Um novo link será enviado para{' '}
-              <strong className="text-foreground">{resendUser?.email}</strong>.
+              Reenviar convite para {resendUser?.name || resendUser?.email}? Um novo link será
+              enviado para {resendUser?.email}.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -393,29 +462,12 @@ export function UsersTab() {
               onClick={async (e) => {
                 e.preventDefault()
                 if (!resendUser) return
-                setIsResending(true)
-                try {
-                  await resendInvite(resendUser.id)
-                  toast({
-                    title: 'Sucesso',
-                    description: `Convite reenviado com sucesso para ${resendUser.name || resendUser.email}.`,
-                  })
-                  setResendUser(null)
-                  loadData()
-                } catch (error: any) {
-                  toast({
-                    title: 'Erro ao reenviar',
-                    description: error.message || 'Falha ao reenviar o convite.',
-                    variant: 'destructive',
-                  })
-                } finally {
-                  setIsResending(false)
-                }
+                await handleResendInvite(resendUser.id, resendUser.email, resendUser.name)
               }}
               disabled={isResending}
             >
               {isResending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Reenviar
+              Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
