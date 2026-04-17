@@ -6,6 +6,7 @@ import {
   updateUserRole,
   inviteUser,
   updateUserProfile,
+  deactivateUser,
 } from '@/services/users'
 import { getAuditLogs } from '@/services/auditLogs'
 import { Database } from '@/lib/supabase/types'
@@ -39,8 +40,18 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, UserPlus, UserX, UserCheck, MoreHorizontal, Edit } from 'lucide-react'
+import { Loader2, UserPlus, UserX, UserCheck, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
 import { EditUserDialog } from './EditUserDialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +77,8 @@ export function UsersTab() {
   const [inviting, setInviting] = useState(false)
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<Profile | null>(null)
+  const [userToDeactivate, setUserToDeactivate] = useState<Profile | null>(null)
+  const [isDeactivating, setIsDeactivating] = useState(false)
 
   const loadData = async () => {
     setLoading(true)
@@ -259,6 +272,16 @@ export function UsersTab() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setUserToDeactivate(profile)}
+                            title="Remover Usuário"
+                            disabled={profile.id === user?.id || profile.status === 'Inativo'}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                           {profile.id !== user?.id && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -353,6 +376,62 @@ export function UsersTab() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog
+        open={!!userToDeactivate}
+        onOpenChange={(open) => !open && setUserToDeactivate(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover Usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O usuário será marcado como inativo e seus dados
+              históricos serão preservados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeactivating}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault()
+                if (!userToDeactivate) return
+                setIsDeactivating(true)
+                try {
+                  let ip = 'Desconhecido'
+                  try {
+                    const res = await fetch('https://api.ipify.org?format=json')
+                    if (res.ok) {
+                      const json = await res.json()
+                      ip = json.ip || 'Desconhecido'
+                    }
+                  } catch (err) {}
+
+                  await deactivateUser(userToDeactivate.id, user?.id || '', ip)
+                  toast({
+                    title: 'Usuário removido',
+                    description: 'O usuário foi marcado como inativo com sucesso.',
+                  })
+                  setUserToDeactivate(null)
+                  loadData()
+                } catch (error: any) {
+                  toast({
+                    title: 'Erro ao remover',
+                    description: error.message || 'Falha ao desativar o usuário.',
+                    variant: 'destructive',
+                  })
+                } finally {
+                  setIsDeactivating(false)
+                }
+              }}
+              disabled={isDeactivating}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeactivating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <EditUserDialog
         user={editingUser}

@@ -44,6 +44,20 @@ export const inviteUser = async (email: string, role: string) => {
   return data
 }
 
+export const deactivateUser = async (
+  id: string,
+  adminId: string,
+  ipAddress: string = 'Desconhecido',
+) => {
+  const { error } = await supabase.from('profiles').update({ status: 'Inativo' }).eq('id', id)
+  if (error) throw error
+
+  await supabase.from('audit_logs').insert({
+    user_id: adminId,
+    action: `user_deactivated - IP Origem: ${ipAddress} - Usuário ID: ${id}`,
+  })
+}
+
 export const updateUserProfile = async (
   id: string,
   data: {
