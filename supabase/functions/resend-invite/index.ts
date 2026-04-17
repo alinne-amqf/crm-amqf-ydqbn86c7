@@ -10,20 +10,15 @@ Deno.serve(async (req: Request) => {
   const supabaseClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
+    { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
   )
 
   const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   )
 
-  async function logAudit(
-    adminId: string,
-    targetUserId: string | null,
-    status: string,
-    action: string,
-  ) {
+  async function logAudit(adminId: string, targetUserId: string | null, status: string, action: string) {
     try {
       await supabaseAdmin.from('audit_logs').insert({
         user_id: adminId,
@@ -37,9 +32,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
+    const { data: { user } } = await supabaseClient.auth.getUser()
     if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -87,12 +80,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (targetProfile.has_accessed) {
-      await logAudit(
-        adminId,
-        user_id,
-        'falha',
-        'invite_resent - Usuário já realizou primeiro acesso',
-      )
+      await logAudit(adminId, user_id, 'falha', 'invite_resent - Usuário já realizou primeiro acesso')
       return new Response(JSON.stringify({ error: 'Usuário já realizou primeiro acesso.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -103,11 +91,13 @@ Deno.serve(async (req: Request) => {
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7)
 
-    const { error: tokenError } = await supabaseAdmin.from('invitation_tokens').insert({
-      token,
-      user_id,
-      expires_at: expiresAt.toISOString(),
-    })
+    const { error: tokenError } = await supabaseAdmin
+      .from('invitation_tokens')
+      .insert({
+        token,
+        user_id,
+        expires_at: expiresAt.toISOString(),
+      })
 
     if (tokenError) {
       await logAudit(adminId, user_id, 'falha', 'invite_resent - Erro ao gerar token')
@@ -119,13 +109,11 @@ Deno.serve(async (req: Request) => {
 
     await logAudit(adminId, user_id, 'sucesso', 'invite_resent')
 
-    return new Response(
-      JSON.stringify({ success: true, message: 'Convite reenviado com sucesso.' }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
+    return new Response(JSON.stringify({ success: true, message: 'Convite reenviado com sucesso.' }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
