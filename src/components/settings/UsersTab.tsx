@@ -261,7 +261,7 @@ export function UsersTab() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                              className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700 opacity-100 visible flex"
                               onClick={() => setEditingUser(profile)}
                               title="Editar Usuário"
                             >
@@ -270,7 +270,7 @@ export function UsersTab() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                              className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50 opacity-100 visible flex"
                               onClick={() => setUserToDeactivate(profile)}
                               title="Remover Usuário"
                               disabled={profile.id === user?.id || profile.status === 'Inativo'}
@@ -353,10 +353,13 @@ export function UsersTab() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover Usuário</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O usuário será marcado como inativo e seus dados
-              históricos serão preservados.
+            <AlertDialogTitle className="text-red-600 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Remover Usuário
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-red-600 font-medium bg-red-50 p-3 rounded-md mt-2">
+              Aviso: Esta ação não pode ser desfeita. O usuário será marcado como inativo e seus
+              dados históricos serão preservados, mas ele perderá o acesso imediato ao sistema.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
