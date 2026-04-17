@@ -4,6 +4,7 @@ import {
   getUsers,
   updateUserRole,
   inviteUser,
+  resendInvite,
   updateUserProfile,
   deactivateUser,
 } from '@/services/users'
@@ -394,7 +395,7 @@ export function UsersTab() {
                 if (!resendUser) return
                 setIsResending(true)
                 try {
-                  await inviteUser(resendUser.email, resendUser.role)
+                  await resendInvite(resendUser.id)
                   toast({
                     title: 'Sucesso',
                     description: `Convite reenviado com sucesso para ${resendUser.name || resendUser.email}.`,
