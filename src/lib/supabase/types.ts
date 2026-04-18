@@ -1,11 +1,17 @@
 // AVOID UPDATING THIS FILE DIRECTLY. It is automatically generated.
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.5'
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -36,18 +42,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'audit_logs_target_user_id_fkey'
-            columns: ['target_user_id']
+            foreignKeyName: "audit_logs_target_user_id_fkey"
+            columns: ["target_user_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'audit_logs_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -123,11 +129,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'interactions_customer_id_fkey'
-            columns: ['customer_id']
+            foreignKeyName: "interactions_customer_id_fkey"
+            columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: 'customers'
-            referencedColumns: ['id']
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -155,11 +161,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'invitation_tokens_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "invitation_tokens_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -202,11 +208,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'opportunities_customer_id_fkey'
-            columns: ['customer_id']
+            foreignKeyName: "opportunities_customer_id_fkey"
+            columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: 'customers'
-            referencedColumns: ['id']
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -218,7 +224,7 @@ export type Database = {
           has_accessed: boolean
           id: string
           name: string | null
-          role: Database['public']['Enums']['user_role']
+          role: Database["public"]["Enums"]["user_role"]
           status: string
           updated_at: string
         }
@@ -229,7 +235,7 @@ export type Database = {
           has_accessed?: boolean
           id: string
           name?: string | null
-          role?: Database['public']['Enums']['user_role']
+          role?: Database["public"]["Enums"]["user_role"]
           status?: string
           updated_at?: string
         }
@@ -240,7 +246,7 @@ export type Database = {
           has_accessed?: boolean
           id?: string
           name?: string | null
-          role?: Database['public']['Enums']['user_role']
+          role?: Database["public"]["Enums"]["user_role"]
           status?: string
           updated_at?: string
         }
@@ -309,11 +315,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'tasks_customer_id_fkey'
-            columns: ['customer_id']
+            foreignKeyName: "tasks_customer_id_fkey"
+            columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: 'customers'
-            referencedColumns: ['id']
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -325,7 +331,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      user_role: 'Admin' | 'Gerente' | 'Vendedor'
+      user_role: "Admin" | "Gerente" | "Vendedor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -333,31 +339,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -366,23 +374,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -391,23 +399,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -416,45 +424,46 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
-    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
-    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
     Enums: {
-      user_role: ['Admin', 'Gerente', 'Vendedor'],
+      user_role: ["Admin", "Gerente", "Vendedor"],
     },
   },
 } as const
+
 
 // ====== DATABASE EXTENDED CONTEXT (auto-generated) ======
 // This section contains actual PostgreSQL column types, constraints, RLS policies,
@@ -640,7 +649,7 @@ export const Constants = {
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION handle_new_user()
 //   CREATE OR REPLACE FUNCTION public.handle_new_user()
 //    RETURNS trigger
@@ -655,26 +664,27 @@ export const Constants = {
 //     EXCEPTION WHEN OTHERS THEN
 //       invited_role := 'Vendedor'::public.user_role;
 //     END;
-//
+//   
 //     IF invited_role IS NULL THEN
 //       invited_role := 'Vendedor'::public.user_role;
 //     END IF;
-//
+//   
 //     INSERT INTO public.profiles (id, email, name, role)
 //     VALUES (
-//       NEW.id,
-//       NEW.email,
-//       COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+//       NEW.id, 
+//       NEW.email, 
+//       COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)), 
 //       invited_role
 //     )
 //     ON CONFLICT (id) DO NOTHING;
-//
+//     
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 
 // --- INDEXES ---
 // Table: tasks
 //   CREATE INDEX tasks_customer_id_idx ON public.tasks USING btree (customer_id)
 //   CREATE INDEX tasks_user_id_idx ON public.tasks USING btree (user_id)
+
