@@ -107,32 +107,28 @@ export function UsersTab() {
         setResendUser(null)
         loadData()
       } else {
-        let errorData: any = {}
-        let errorText = ''
-        try {
-          errorText = await response.text()
-          errorData = JSON.parse(errorText)
-        } catch (e) {
-          // ignore
-        }
-        const errorMsg = errorData?.error || errorData?.message || errorText
-
         if (response.status === 400) {
           toast({
             title: 'Erro',
-            description: errorMsg || 'Usuário já acessou o sistema.',
+            description: 'Usuario ja acessou o sistema. Nao e possivel reenviar convite.',
             variant: 'destructive',
           })
         } else if (response.status === 404) {
           toast({
             title: 'Erro',
-            description: errorMsg || 'Usuário nao encontrado.',
+            description: 'Usuario nao encontrado.',
+            variant: 'destructive',
+          })
+        } else if (response.status === 503) {
+          toast({
+            title: 'Erro',
+            description: 'Erro ao enviar email. Tente novamente em alguns instantes.',
             variant: 'destructive',
           })
         } else {
           toast({
             title: 'Erro',
-            description: errorMsg || 'Erro na requisição.',
+            description: 'Erro ao processar solicitacao. Tente novamente.',
             variant: 'destructive',
           })
         }
@@ -140,7 +136,7 @@ export function UsersTab() {
     } catch (error) {
       toast({
         title: 'Erro',
-        description: 'Erro ao conectar. Tente novamente.',
+        description: 'Erro ao processar solicitacao. Tente novamente.',
         variant: 'destructive',
       })
     } finally {
@@ -285,20 +281,21 @@ export function UsersTab() {
                   <TableHead>Email</TableHead>
                   <TableHead>Papel</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Status Acesso</TableHead>
                   {isAdmin && <TableHead className="text-right w-[100px]">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
+                    <TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">
                       <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ) : profiles.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={isAdmin ? 5 : 4}
+                      colSpan={isAdmin ? 6 : 5}
                       className="h-24 text-center text-muted-foreground"
                     >
                       Nenhum usuário encontrado.
@@ -326,23 +323,31 @@ export function UsersTab() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        {!profile.has_accessed && profile.status !== 'Inativo' ? (
+                        <Badge variant={profile.status === 'Ativo' ? 'default' : 'secondary'}>
+                          {profile.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {profile.has_accessed ? (
                           <Badge
-                            variant="outline"
-                            className="bg-amber-50 text-amber-700 border-amber-200"
+                            variant="secondary"
+                            className="bg-gray-100 text-gray-500 hover:bg-gray-100 font-normal"
                           >
-                            Cadastrado, Não Acessado
+                            Ja Acessou
                           </Badge>
                         ) : (
-                          <Badge variant={profile.status === 'Ativo' ? 'default' : 'secondary'}>
-                            {profile.status}
+                          <Badge
+                            variant="outline"
+                            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-50 font-normal"
+                          >
+                            Aguardando Primeiro Acesso
                           </Badge>
                         )}
                       </TableCell>
                       {isAdmin && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {!profile.has_accessed && profile.status !== 'Inativo' ? (
+                            {!profile.has_accessed ? (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -356,7 +361,7 @@ export function UsersTab() {
                                 variant="secondary"
                                 className="bg-gray-100 text-gray-500 hover:bg-gray-100 font-normal whitespace-nowrap"
                               >
-                                Ja acessou
+                                Ja Acessou
                               </Badge>
                             )}
                             <Button
@@ -453,7 +458,7 @@ export function UsersTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reenviar Convite</AlertDialogTitle>
             <AlertDialogDescription>
-              Reenviar convite para {resendUser?.name || resendUser?.email}? Um novo link será
+              Reenviar convite para {resendUser?.name || resendUser?.email}? Um novo link sera
               enviado para {resendUser?.email}.
             </AlertDialogDescription>
           </AlertDialogHeader>
