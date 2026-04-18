@@ -46,7 +46,7 @@ export const inviteUser = async (email: string, role: string) => {
 }
 
 export const resendInvite = async (userId: string) => {
-  const { data, error } = await supabase.functions.invoke('resend-invite', {
+  const { data, error } = await supabase.functions.invoke('resend_invite', {
     body: { user_id: userId },
   })
   if (error) throw error
