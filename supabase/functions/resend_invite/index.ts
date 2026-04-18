@@ -26,12 +26,12 @@ Deno.serve(async (req: Request) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } },
     )
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
     let body
@@ -53,7 +53,10 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const { data: { user: adminUser }, error: authError } = await supabaseClient.auth.getUser()
+    const {
+      data: { user: adminUser },
+      error: authError,
+    } = await supabaseClient.auth.getUser()
     if (authError || !adminUser) {
       return new Response(JSON.stringify({ error: 'Nao autorizado.' }), {
         status: 401,
@@ -63,7 +66,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('status, email, id, has_accessed')
+      .select('status, email, id, has_accessed, name')
       .eq('id', user_id)
       .single()
 
@@ -75,23 +78,24 @@ Deno.serve(async (req: Request) => {
     }
 
     if (profile.has_accessed === true) {
-      return new Response(JSON.stringify({ error: 'Usuario ja acessou o sistema. Nao e possivel reenviar convite.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ error: 'Usuario ja acessou o sistema. Nao e possivel reenviar convite.' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     const token = crypto.randomUUID()
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7)
 
-    const { error: tokenError } = await supabaseAdmin
-      .from('invitation_tokens')
-      .insert({
-        user_id: user_id,
-        token: token,
-        expires_at: expiresAt.toISOString()
-      })
+    const { error: tokenError } = await supabaseAdmin.from('invitation_tokens').insert({
+      user_id: user_id,
+      token: token,
+      expires_at: expiresAt.toISOString(),
+    })
 
     if (tokenError) {
       return new Response(JSON.stringify({ error: 'Erro ao processar solicitacao.' }), {
@@ -100,9 +104,39 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(profile.email)
-    
-    if (inviteError) {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY')
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY not found')
+      return new Response(
+        JSON.stringify({ error: 'Erro ao enviar email. Tente novamente em alguns instantes.' }),
+        {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
+    const appUrl = req.headers.get('origin') || 'https://crmamqf.goskip.app'
+    const userName = profile.name || profile.email.split('@')[0]
+    const emailHtml = `Oi ${userName}, voce foi convidado para acessar o CRM AMQF. Clique aqui para criar sua senha: ${appUrl}/convite?token=${token}. Link valido por 7 dias.`
+
+    const resendRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'noreply@crmamqf.goskip.app',
+        to: profile.email,
+        subject: 'Convite para acessar CRM AMQF',
+        html: emailHtml,
+      }),
+    })
+
+    if (!resendRes.ok) {
+      const errText = await resendRes.text()
+      console.error('Resend error:', errText)
       await supabaseAdmin.from('audit_logs').insert({
         user_id: adminUser.id,
         target_user_id: user_id,
@@ -110,24 +144,29 @@ Deno.serve(async (req: Request) => {
         status: 'falha',
       })
 
-      return new Response(JSON.stringify({ error: 'Erro ao enviar email. Tente novamente em alguns instantes.' }), {
-        status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ error: 'Erro ao enviar email. Tente novamente em alguns instantes.' }),
+        {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     await supabaseAdmin.from('audit_logs').insert({
       user_id: adminUser.id,
       target_user_id: user_id,
       action: 'invite_resent',
-      status: 'sucesso',
+      status: 'success',
     })
 
-    return new Response(JSON.stringify({ message: `Convite reenviado com sucesso para ${profile.email}.`, token }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-
+    return new Response(
+      JSON.stringify({ message: `Convite reenviado com sucesso para ${profile.email}.`, token }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   } catch (err) {
     return new Response(JSON.stringify({ error: 'Erro ao processar solicitacao.' }), {
       status: 500,
