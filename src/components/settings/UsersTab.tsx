@@ -87,7 +87,7 @@ export function UsersTab() {
       const token = sessionData.session?.access_token
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resend-invite`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resend_invite`,
         {
           method: 'POST',
           headers: {
@@ -102,6 +102,7 @@ export function UsersTab() {
         toast({
           title: 'Sucesso',
           description: `Convite reenviado com sucesso para ${userName || userEmail}.`,
+          className: 'bg-green-50 text-green-800 border-green-200',
         })
         setResendUser(null)
         loadData()
@@ -341,7 +342,7 @@ export function UsersTab() {
                       {isAdmin && (
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {profile.status === 'pending_first_login' || !profile.has_accessed ? (
+                            {profile.status === 'pending_first_login' ? (
                               <Button
                                 variant="outline"
                                 size="sm"

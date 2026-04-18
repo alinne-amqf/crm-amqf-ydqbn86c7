@@ -11,12 +11,12 @@ Deno.serve(async (req: Request) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
     )
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
     const { user_id } = await req.json()
@@ -28,32 +28,59 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) {
+    const {
+      data: { user: adminUser },
+    } = await supabaseClient.auth.getUser()
+    if (!adminUser) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { data: targetUser, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(user_id)
-    if (fetchError || !targetUser.user) {
-      return new Response(JSON.stringify({ error: 'User not found' }), {
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('status, email, id')
+      .eq('id', user_id)
+      .single()
+
+    if (profileError || !profile) {
+      return new Response(JSON.stringify({ error: 'Usuário nao encontrado.' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const email = targetUser.user.email
-    if (!email) {
-      return new Response(JSON.stringify({ error: 'User has no email' }), {
+    if (profile.status !== 'pending_first_login') {
+      return new Response(JSON.stringify({ error: 'Usuário já realizou primeiro acesso.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email)
-    
+    const token = crypto.randomUUID()
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 7)
+
+    const { error: tokenError } = await supabaseAdmin.from('invitation_tokens').insert({
+      user_id: user_id,
+      token: token,
+      expires_at: expiresAt.toISOString(),
+    })
+
+    if (tokenError) {
+      throw new Error(`Failed to store token: ${tokenError.message}`)
+    }
+
+    const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(profile.email)
+
+    await supabaseAdmin.from('audit_logs').insert({
+      user_id: adminUser.id,
+      target_user_id: user_id,
+      action: 'invite_resent',
+      status: inviteError ? 'falha' : 'sucesso',
+    })
+
     if (inviteError) {
       return new Response(JSON.stringify({ error: inviteError.message }), {
         status: 400,
@@ -61,11 +88,10 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    return new Response(JSON.stringify({ message: 'Invite resent successfully', data: inviteData }), {
+    return new Response(JSON.stringify({ message: 'Convite reenviado com sucesso', token }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
