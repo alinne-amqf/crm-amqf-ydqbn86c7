@@ -11,12 +11,12 @@ Deno.serve(async (req: Request) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
     )
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
     const { user_id } = await req.json()
@@ -28,7 +28,9 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const { data: { user: adminUser } } = await supabaseClient.auth.getUser()
+    const {
+      data: { user: adminUser },
+    } = await supabaseClient.auth.getUser()
     if (!adminUser) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -38,7 +40,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('status, email, id')
+      .select('status, email, id, has_accessed')
       .eq('id', user_id)
       .single()
 
@@ -49,8 +51,8 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    if (profile.status !== 'pending_first_login') {
-      return new Response(JSON.stringify({ error: 'Usuário já realizou primeiro acesso.' }), {
+    if (profile.has_accessed) {
+      return new Response(JSON.stringify({ error: 'Usuário já acessou o sistema.' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -60,20 +62,18 @@ Deno.serve(async (req: Request) => {
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7)
 
-    const { error: tokenError } = await supabaseAdmin
-      .from('invitation_tokens')
-      .insert({
-        user_id: user_id,
-        token: token,
-        expires_at: expiresAt.toISOString()
-      })
+    const { error: tokenError } = await supabaseAdmin.from('invitation_tokens').insert({
+      user_id: user_id,
+      token: token,
+      expires_at: expiresAt.toISOString(),
+    })
 
     if (tokenError) {
       throw new Error(`Failed to store token: ${tokenError.message}`)
     }
 
     const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(profile.email)
-    
+
     await supabaseAdmin.from('audit_logs').insert({
       user_id: adminUser.id,
       target_user_id: user_id,
@@ -92,7 +92,6 @@ Deno.serve(async (req: Request) => {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,

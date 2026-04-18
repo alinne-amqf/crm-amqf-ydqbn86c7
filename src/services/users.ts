@@ -41,6 +41,7 @@ export const inviteUser = async (email: string, role: string) => {
     body: { email, role },
   })
   if (error) throw error
+  if (data?.error) throw new Error(data.error)
   return data
 }
 

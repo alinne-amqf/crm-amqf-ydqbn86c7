@@ -37,12 +37,27 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (existingProfile) {
+      throw new Error('Este e-mail já está cadastrado no sistema.')
+    }
+
     const { data: inviteData, error: inviteError } =
       await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         data: { role, name: email.split('@')[0] },
       })
 
-    if (inviteError) throw inviteError
+    if (inviteError) {
+      if (inviteError.message.includes('already registered')) {
+        throw new Error('Este e-mail já está cadastrado no sistema.')
+      }
+      throw inviteError
+    }
 
     await supabaseAdmin.from('audit_logs').insert({
       user_id: user.id,
