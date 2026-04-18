@@ -11,12 +11,12 @@ Deno.serve(async (req: Request) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     )
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
     const { user_id } = await req.json()
@@ -28,9 +28,7 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const {
-      data: { user },
-    } = await supabaseClient.auth.getUser()
+    const { data: { user } } = await supabaseClient.auth.getUser()
     if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -38,8 +36,7 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const { data: targetUser, error: fetchError } =
-      await supabaseAdmin.auth.admin.getUserById(user_id)
+    const { data: targetUser, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(user_id)
     if (fetchError || !targetUser.user) {
       return new Response(JSON.stringify({ error: 'User not found' }), {
         status: 404,
@@ -55,9 +52,8 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    const { data: inviteData, error: inviteError } =
-      await supabaseAdmin.auth.admin.inviteUserByEmail(email)
-
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email)
+    
     if (inviteError) {
       return new Response(JSON.stringify({ error: inviteError.message }), {
         status: 400,
@@ -65,13 +61,11 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    return new Response(
-      JSON.stringify({ message: 'Invite resent successfully', data: inviteData }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    )
+    return new Response(JSON.stringify({ message: 'Invite resent successfully', data: inviteData }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
