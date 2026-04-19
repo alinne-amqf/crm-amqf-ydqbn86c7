@@ -6,6 +6,7 @@ import {
   inviteUser,
   updateUserProfile,
   deactivateUser,
+  generateTemporaryPassword,
 } from '@/services/users'
 import { supabase } from '@/lib/supabase/client'
 import { getAuditLogs } from '@/services/auditLogs'
@@ -40,7 +41,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, UserPlus, Edit, Trash2 } from 'lucide-react'
+import { Loader2, UserPlus, Edit, Trash2, Copy } from 'lucide-react'
 import { EditUserDialog } from './EditUserDialog'
 import {
   AlertDialog,
@@ -74,7 +75,34 @@ export function UsersTab() {
   const [resendUser, setResendUser] = useState<Profile | null>(null)
   const [isResending, setIsResending] = useState(false)
 
+  const [tempPasswordUser, setTempPasswordUser] = useState<Profile | null>(null)
+  const [tempPasswordValue, setTempPasswordValue] = useState<string | null>(null)
+  const [isGeneratingTempPassword, setIsGeneratingTempPassword] = useState(false)
+
   const isAdmin = profiles.find((p) => p.id === user?.id)?.role === 'Admin'
+
+  const handleGeneratePassword = async () => {
+    if (!tempPasswordUser) return
+    setIsGeneratingTempPassword(true)
+    try {
+      const data = await generateTemporaryPassword(tempPasswordUser.id)
+      setTempPasswordValue(data.password)
+      toast({
+        title: 'Sucesso',
+        description: data.message,
+        className: 'bg-green-50 text-green-800 border-green-200',
+      })
+      loadData()
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao processar solicitacao.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsGeneratingTempPassword(false)
+    }
+  }
 
   const handleResendInvite = async (
     userId: string,
@@ -273,6 +301,12 @@ export function UsersTab() {
             )}
           </div>
 
+          {profiles.length > 0 && profiles.every((p) => p.has_accessed) && (
+            <div className="bg-muted/50 p-3 rounded-md text-sm text-muted-foreground text-center border border-dashed">
+              Todos os usuarios ja acessaram o sistema.
+            </div>
+          )}
+
           <div className="rounded-md border bg-card">
             <Table>
               <TableHeader>
@@ -282,7 +316,7 @@ export function UsersTab() {
                   <TableHead>Papel</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Status Acesso</TableHead>
-                  {isAdmin && <TableHead className="text-right w-[100px]">Ações</TableHead>}
+                  {isAdmin && <TableHead className="text-right">Ação</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -348,14 +382,24 @@ export function UsersTab() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             {!profile.has_accessed ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-xs font-medium"
-                                onClick={() => setResendUser(profile)}
-                              >
-                                Reenviar Convite
-                              </Button>
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs font-medium whitespace-nowrap"
+                                  onClick={() => setTempPasswordUser(profile)}
+                                >
+                                  Gerar Senha
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs font-medium whitespace-nowrap"
+                                  onClick={() => setResendUser(profile)}
+                                >
+                                  Reenviar Convite
+                                </Button>
+                              </>
                             ) : (
                               <Badge
                                 variant="secondary"
@@ -539,6 +583,88 @@ export function UsersTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={!!tempPasswordUser}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTempPasswordUser(null)
+            setTempPasswordValue(null)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerar Senha Temporaria</DialogTitle>
+            <DialogDescription>
+              {tempPasswordValue
+                ? 'Senha gerada com sucesso.'
+                : `Uma senha temporaria sera gerada para ${tempPasswordUser?.name || tempPasswordUser?.email}. O usuario devera alterar na primeira autenticacao.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {tempPasswordValue ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-2">
+                <Input value={tempPasswordValue} readOnly className="font-mono text-lg" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    navigator.clipboard.writeText(tempPasswordValue)
+                    toast({ title: 'Copiado!' })
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-yellow-600 font-medium">
+                Copie e envie esta senha para o usuario. Ela nao sera exibida novamente. O usuario
+                devera alterar na primeira autenticacao.
+              </p>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            {tempPasswordValue ? (
+              <>
+                <Button
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    navigator.clipboard.writeText(tempPasswordValue)
+                    toast({ title: 'Copiado!' })
+                  }}
+                >
+                  Copiar Senha
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setTempPasswordUser(null)
+                    setTempPasswordValue(null)
+                  }}
+                >
+                  Fechar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setTempPasswordUser(null)}
+                  disabled={isGeneratingTempPassword}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={handleGeneratePassword} disabled={isGeneratingTempPassword}>
+                  {isGeneratingTempPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Gerar
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <EditUserDialog
         user={editingUser}

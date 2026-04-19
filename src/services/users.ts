@@ -54,6 +54,15 @@ export const resendInvite = async (userId: string) => {
   return data
 }
 
+export const generateTemporaryPassword = async (userId: string) => {
+  const { data, error } = await supabase.functions.invoke('generate_temporary_password', {
+    body: { user_id: userId },
+  })
+  if (error) throw error
+  if (data?.error) throw new Error(data.error)
+  return data
+}
+
 export const deactivateUser = async (
   id: string,
   adminId: string,
