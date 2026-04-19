@@ -3,7 +3,11 @@ import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
 import { Profile } from '@/lib/types'
 
-export type ExtendedProfile = Profile & { avatar?: string | null }
+export type ExtendedProfile = Profile & {
+  avatar?: string | null
+  has_accessed?: boolean
+  temporary_password_hash?: string | null
+}
 
 interface AuthContextType {
   user: User | null
@@ -77,6 +81,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               name: data.name,
               role: data.role,
               avatar: data.avatar,
+              has_accessed: data.has_accessed,
+              temporary_password_hash: data.temporary_password_hash,
               createdAt: data.created_at,
               updatedAt: data.updated_at,
             } as any)
@@ -120,6 +126,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 name: payload.new.name,
                 role: payload.new.role,
                 avatar: payload.new.avatar,
+                has_accessed: payload.new.has_accessed,
+                temporary_password_hash: payload.new.temporary_password_hash,
               } as any
             })
           }

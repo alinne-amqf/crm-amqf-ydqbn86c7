@@ -14,21 +14,27 @@ import TasksPage from './pages/Tasks'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import Layout from './components/Layout'
+import ChangePasswordMandatory from './pages/ChangePasswordMandatory'
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 
 const MarkAccessed = () => {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
 
   useEffect(() => {
-    if (user) {
+    if (
+      user &&
+      profile &&
+      profile.has_accessed === false &&
+      profile.temporary_password_hash === null
+    ) {
       supabase
         .from('profiles')
         .update({ has_accessed: true } as any)
         .eq('id', user.id)
         .then()
     }
-  }, [user])
+  }, [user, profile])
 
   return null
 }
@@ -44,6 +50,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/update-password" element={<UpdatePassword />} />
           <Route element={<ProtectedRoute />}>
+            <Route path="/alterar-senha-obrigatoria" element={<ChangePasswordMandatory />} />
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<Dashboard />} />
