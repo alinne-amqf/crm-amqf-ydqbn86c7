@@ -1,6 +1,6 @@
 {
   "_versions": {
-    "invite-user": 4,
-    "resend_invite": 5
+    "invite-user": 6,
+    "resend_invite": 7
   }
 }
