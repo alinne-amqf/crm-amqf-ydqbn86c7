@@ -7,6 +7,9 @@ export interface Profile {
   role: UserRole
   createdAt: string
   updatedAt: string
+  first_login_pending: boolean
+  has_accessed: boolean
+  temporary_password_hash: string | null
 }
 
 export interface Customer {
