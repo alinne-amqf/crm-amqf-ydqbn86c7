@@ -1,6 +1,7 @@
 {
   "_versions": {
     "invite-user": 6,
-    "resend_invite": 7
+    "resend_invite": 7,
+    "generate_temporary_password": 1
   }
 }
