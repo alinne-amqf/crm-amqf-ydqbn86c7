@@ -73,25 +73,44 @@ export default function ChangePasswordMandatory() {
     setErrorMsg('')
 
     try {
-      const { data, error } = await supabase.functions.invoke('change_password_first_login', {
-        body: {
-          user_id: user.id,
-          current_password: currentPassword,
-          new_password: newPassword,
+      const sessionRes = await supabase.auth.getSession()
+      const token = sessionRes.data.session?.access_token
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/change_password_first_login`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            current_password: currentPassword,
+            new_password: newPassword,
+          }),
         },
-      })
+      )
 
-      if (error) throw error
-      if (data?.error) throw new Error(data.error)
+      const data = await res.json().catch(() => ({}))
 
-      toast.success('Senha alterada com sucesso! Redirecionando...')
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          toast.error('Nao autorizado')
+          navigate('/login')
+          return
+        }
+        throw new Error(data.error || 'Erro ao processar solicitacao.')
+      }
+
+      toast.success('Senha alterada com sucesso! Redirecionando para dashboard...')
 
       setTimeout(() => {
         navigate('/dashboard', { replace: true })
       }, 2000)
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao processar solicitação.')
-      toast.error('Erro ao alterar senha', { description: err.message })
+      setErrorMsg(err.message || 'Erro ao processar solicitacao.')
+      toast.error(err.message || 'Erro ao alterar senha')
     } finally {
       setLoading(false)
     }
@@ -106,13 +125,13 @@ export default function ChangePasswordMandatory() {
           </div>
           <CardTitle className="text-2xl font-bold">Altere sua Senha</CardTitle>
           <CardDescription>
-            Você está usando uma senha temporária. Por favor, crie uma nova senha pessoal agora.
+            Voce esta usando uma senha temporaria. Por favor, crie uma nova senha pessoal agora.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="currentPassword">Senha Temporária</Label>
+              <Label htmlFor="currentPassword">Senha Temporaria</Label>
               <Input
                 id="currentPassword"
                 type="password"

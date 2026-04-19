@@ -7,6 +7,7 @@ export type ExtendedProfile = Profile & {
   avatar?: string | null
   has_accessed?: boolean
   temporary_password_hash?: string | null
+  first_login_pending?: boolean
 }
 
 interface AuthContextType {
@@ -19,6 +20,8 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: any }>
   updatePassword: (password: string) => Promise<{ error: any }>
   loading: boolean
+  first_login_pending: boolean
+  isAuthenticated: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -83,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               avatar: data.avatar,
               has_accessed: data.has_accessed,
               temporary_password_hash: data.temporary_password_hash,
+              first_login_pending: data.first_login_pending,
               createdAt: data.created_at,
               updatedAt: data.updated_at,
             } as any)
@@ -128,6 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 avatar: payload.new.avatar,
                 has_accessed: payload.new.has_accessed,
                 temporary_password_hash: payload.new.temporary_password_hash,
+                first_login_pending: payload.new.first_login_pending,
               } as any
             })
           }
@@ -186,6 +191,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         resetPassword,
         updatePassword,
         loading,
+        first_login_pending: profile?.first_login_pending ?? false,
+        isAuthenticated: !!user,
       }}
     >
       {children}

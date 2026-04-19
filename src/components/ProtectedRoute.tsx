@@ -1,39 +1,38 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
-import { Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export const ProtectedRoute = () => {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, isAuthenticated, first_login_pending } = useAuth()
   const location = useLocation()
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-screen w-screen flex-col items-center justify-center p-8 space-y-4">
+        <Skeleton className="h-12 w-[250px]" />
+        <Skeleton className="h-[400px] w-full max-w-4xl" />
       </div>
     )
   }
 
-  if (!user) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />
   }
 
   if (!profile) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-screen w-screen flex-col items-center justify-center p-8 space-y-4">
+        <Skeleton className="h-12 w-[250px]" />
+        <Skeleton className="h-[400px] w-full max-w-4xl" />
       </div>
     )
   }
 
-  const isFirstLoginPending =
-    profile.has_accessed === false && profile.temporary_password_hash !== null
-
-  if (isFirstLoginPending && location.pathname !== '/alterar-senha-obrigatoria') {
+  if (first_login_pending && location.pathname !== '/alterar-senha-obrigatoria') {
     return <Navigate to="/alterar-senha-obrigatoria" replace />
   }
 
-  if (!isFirstLoginPending && location.pathname === '/alterar-senha-obrigatoria') {
+  if (!first_login_pending && location.pathname === '/alterar-senha-obrigatoria') {
     return <Navigate to="/dashboard" replace />
   }
 
