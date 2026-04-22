@@ -90,12 +90,12 @@ export default function Login() {
           <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-2">
             <KeyRound className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">
+          <CardTitle className="text-h2">
             {mode === 'login' && 'Bem-vindo de volta'}
             {mode === 'register' && 'Crie sua conta'}
             {mode === 'forgot' && 'Recuperar senha'}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-body">
             {mode === 'login' && 'Insira suas credenciais para acessar o CRM'}
             {mode === 'register' && 'Preencha seus dados para começar'}
             {mode === 'forgot' && 'Digite seu e-mail para receber um link de recuperação'}

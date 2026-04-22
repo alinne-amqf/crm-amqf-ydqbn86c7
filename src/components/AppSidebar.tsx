@@ -54,13 +54,13 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="inset">
-      <SidebarHeader className="p-4 flex flex-row items-center gap-2">
+      <SidebarHeader className="p-4 flex flex-row items-center gap-2 text-sidebar-foreground">
         <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <LifeBuoy className="size-5" />
         </div>
         <div className="flex flex-col gap-0.5 leading-none">
-          <span className="font-semibold text-base">CRM Nexus</span>
-          <span className="text-xs text-muted-foreground">Workspace</span>
+          <span className="text-h3">CRM Nexus</span>
+          <span className="text-caption opacity-80">Workspace</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -106,9 +106,9 @@ export function AppSidebar() {
                       {profile?.name?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
+                  <div className="grid flex-1 text-left text-body leading-tight">
                     <span className="truncate font-semibold">{profile?.name || 'Usuário'}</span>
-                    <span className="truncate text-xs">{profile?.email}</span>
+                    <span className="truncate text-caption opacity-80">{profile?.email}</span>
                   </div>
                   <ChevronsUpDown className="ml-auto size-4" />
                 </SidebarMenuButton>
@@ -134,11 +134,9 @@ export function AppSidebar() {
                         {profile?.name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
+                    <div className="grid flex-1 text-left text-body leading-tight">
                       <span className="truncate font-semibold">{profile?.name || 'Usuário'}</span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {profile?.role}
-                      </span>
+                      <span className="truncate text-caption opacity-80">{profile?.role}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>

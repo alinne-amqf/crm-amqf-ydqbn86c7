@@ -123,8 +123,8 @@ export default function ChangePasswordMandatory() {
           <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-2">
             <ShieldAlert className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">Altere sua Senha</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-h2">Altere sua Senha</CardTitle>
+          <CardDescription className="text-body">
             Voce esta usando uma senha temporaria. Por favor, crie uma nova senha pessoal agora.
           </CardDescription>
         </CardHeader>

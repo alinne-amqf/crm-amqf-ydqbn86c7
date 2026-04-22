@@ -190,7 +190,7 @@ export default function TasksPage() {
         </button>
         <div>
           <h4
-            className={`text-base font-medium ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-800'}`}
+            className={`text-body font-medium ${task.status === 'completed' ? 'line-through text-muted-foreground' : 'text-foreground'}`}
           >
             {task.title}
           </h4>
@@ -244,8 +244,10 @@ export default function TasksPage() {
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-fade-in-up pb-10">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">Tarefas</h2>
-          <p className="text-muted-foreground">Gerencie suas atividades e acompanhamentos.</p>
+          <h2 className="text-h1 text-foreground">Tarefas</h2>
+          <p className="text-body text-muted-foreground">
+            Gerencie suas atividades e acompanhamentos.
+          </p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />

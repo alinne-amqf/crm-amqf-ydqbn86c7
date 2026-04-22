@@ -160,8 +160,10 @@ export default function Index() {
     <div className="w-full max-w-7xl mx-auto space-y-6 animate-fade-in-up pb-10">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Clientes</h1>
-          <p className="text-muted-foreground mt-1">Gerencie sua base de clientes e leads.</p>
+          <h1 className="text-h1 text-foreground">Clientes</h1>
+          <p className="text-body text-muted-foreground mt-1">
+            Gerencie sua base de clientes e leads.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleLogout} className="shadow-sm">
@@ -191,14 +193,14 @@ export default function Index() {
         </Button>
       </div>
 
-      <div className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader className="bg-muted/50">
             <TableRow className="hover:bg-transparent">
-              <TableHead className="font-semibold text-slate-700">Nome</TableHead>
-              <TableHead className="font-semibold text-slate-700">Contato</TableHead>
-              <TableHead className="font-semibold text-slate-700">Empresa</TableHead>
-              <TableHead className="font-semibold text-slate-700">Status</TableHead>
+              <TableHead className="font-semibold text-foreground text-small">Nome</TableHead>
+              <TableHead className="font-semibold text-foreground text-small">Contato</TableHead>
+              <TableHead className="font-semibold text-foreground text-small">Empresa</TableHead>
+              <TableHead className="font-semibold text-foreground text-small">Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -228,8 +230,13 @@ export default function Index() {
                       </Avatar>
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-900">{customer.name}</span>
-                          <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-medium">
+                          <span className="font-medium text-foreground text-body">
+                            {customer.name}
+                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="text-caption h-5 px-1.5 font-medium"
+                          >
                             {customer.customerType}
                           </Badge>
                         </div>
@@ -241,20 +248,20 @@ export default function Index() {
                       <a
                         href={`mailto:${customer.email}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-sm text-slate-600 hover:text-primary flex items-center gap-1.5 transition-colors"
+                        className="text-body text-muted-foreground hover:text-primary flex items-center gap-1.5 transition-colors"
                       >
                         <Mail className="h-3.5 w-3.5" />
                         {customer.email}
                       </a>
-                      <span className="text-sm text-slate-500 flex items-center gap-1.5">
+                      <span className="text-small text-muted-foreground flex items-center gap-1.5">
                         <Phone className="h-3.5 w-3.5" />
                         {customer.phone || '-'}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1.5 text-sm text-slate-700 font-medium">
-                      <Building className="h-4 w-4 text-slate-400" />
+                    <div className="flex items-center gap-1.5 text-body text-foreground font-medium">
+                      <Building className="h-4 w-4 text-muted-foreground" />
                       {customer.company || '-'}
                     </div>
                   </TableCell>
@@ -322,10 +329,10 @@ export default function Index() {
       <Sheet open={isSheetOpen} onOpenChange={(open) => !open && handleCloseSheet()}>
         <SheetContent className="w-full sm:max-w-md border-l overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="text-2xl">
+            <SheetTitle className="text-h2">
               {editingCustomer ? 'Editar Cliente' : 'Cadastrar Novo Cliente'}
             </SheetTitle>
-            <SheetDescription>
+            <SheetDescription className="text-body">
               {editingCustomer
                 ? 'Atualize os dados do cliente abaixo.'
                 : 'Preencha os dados abaixo para adicionar um novo cliente ou lead à sua base.'}

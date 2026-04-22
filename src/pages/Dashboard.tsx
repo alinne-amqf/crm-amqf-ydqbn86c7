@@ -81,12 +81,12 @@ export default function Dashboard() {
   }
 
   const CARD_STYLES = [
-    'bg-blue-600 text-white shadow-md shadow-blue-500/20',
-    'bg-emerald-600 text-white shadow-md shadow-emerald-500/20',
-    'bg-zinc-950 text-white shadow-md shadow-zinc-900/20',
-    'bg-amber-400 text-zinc-900 shadow-md shadow-amber-400/20',
-    'bg-card text-card-foreground border border-slate-200 shadow-sm',
-    'bg-card text-card-foreground border border-slate-200 shadow-sm',
+    'bg-primary text-white shadow-md shadow-primary/20',
+    'bg-success text-white shadow-md shadow-success/20',
+    'bg-[#1B1B1B] text-white shadow-md shadow-black/20',
+    'bg-warning text-[#1B1B1B] shadow-md shadow-warning/20',
+    'bg-card text-card-foreground border shadow-sm',
+    'bg-card text-card-foreground border shadow-sm',
   ]
 
   const GrowthIndicator = ({
@@ -144,8 +144,8 @@ export default function Dashboard() {
     <div className="w-full max-w-7xl mx-auto space-y-8 animate-fade-in-up pb-10">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-h1 text-foreground">Dashboard</h1>
+          <p className="text-body text-muted-foreground mt-1">
             Resumo das suas atividades e métricas importantes.
           </p>
         </div>
@@ -176,69 +176,75 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border-slate-200/60 shadow-sm overflow-hidden transition-all hover:shadow-md">
+        <Card className="rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">
+            <CardTitle className="text-small font-medium text-muted-foreground">
               Clientes no Período
             </CardTitle>
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-              <Users className="h-4 w-4 text-blue-600" />
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{data?.metrics.totalCustomers}</div>
+            <div className="text-h2 text-foreground">{data?.metrics.totalCustomers}</div>
             <GrowthIndicator value={data?.metrics.customersGrowth ?? null} />
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/60 shadow-sm overflow-hidden transition-all hover:shadow-md">
+        <Card className="rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Valor em Pipeline</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
-              <Briefcase className="h-4 w-4 text-amber-600" />
+            <CardTitle className="text-small font-medium text-muted-foreground">
+              Valor em Pipeline
+            </CardTitle>
+            <div className="h-8 w-8 rounded-full bg-warning/10 flex items-center justify-center">
+              <Briefcase className="h-4 w-4 text-warning" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
+            <div className="text-h2 text-foreground">
               {formatCurrency(data?.metrics.pipelineValue || 0)}
             </div>
             <GrowthIndicator value={data?.metrics.pipelineGrowth ?? null} />
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/60 shadow-sm overflow-hidden transition-all hover:shadow-md">
+        <Card className="rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Valor Ganho</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <CardTitle className="text-small font-medium text-muted-foreground">
+              Valor Ganho
+            </CardTitle>
+            <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-success" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
+            <div className="text-h2 text-foreground">
               {formatCurrency(data?.metrics.wonValue || 0)}
             </div>
             <GrowthIndicator value={data?.metrics.wonGrowth ?? null} />
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-slate-200/60 shadow-sm overflow-hidden transition-all hover:shadow-md">
+        <Card className="rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Tarefas no Período</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-rose-100 flex items-center justify-center">
-              <ListTodo className="h-4 w-4 text-rose-600" />
+            <CardTitle className="text-small font-medium text-muted-foreground">
+              Tarefas no Período
+            </CardTitle>
+            <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+              <ListTodo className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{data?.metrics.pendingTasks}</div>
+            <div className="text-h2 text-foreground">{data?.metrics.pendingTasks}</div>
             <GrowthIndicator value={data?.metrics.tasksGrowth ?? null} />
           </CardContent>
         </Card>
       </div>
 
-      <div className="bg-slate-50/50 border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 space-y-8">
+      <div className="bg-background rounded-[2.5rem] p-6 sm:p-8 space-y-8">
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-slate-900">Oportunidades Recentes</h2>
+            <h2 className="text-h2 text-foreground">Oportunidades Recentes</h2>
             <Button
               variant="ghost"
               size="icon"
@@ -334,9 +340,9 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col">
+          <div className="bg-card rounded-[2rem] p-6 shadow-sm border flex flex-col">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Funil de Vendas</h2>
+              <h2 className="text-h2 text-foreground">Funil de Vendas</h2>
               <Button
                 variant="ghost"
                 size="icon"
@@ -407,9 +413,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100">
+          <div className="bg-card rounded-[2rem] p-6 shadow-sm border">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-900">Agenda de Tarefas</h2>
+              <h2 className="text-h2 text-foreground">Agenda de Tarefas</h2>
               <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" asChild>
                 <Link to="/tarefas">
                   <CalendarIcon className="h-4 w-4 text-slate-500" />

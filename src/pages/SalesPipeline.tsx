@@ -235,7 +235,7 @@ export default function SalesPipeline() {
   return (
     <div className="flex h-full min-h-[calc(100vh-4rem)] flex-col space-y-4 p-8 pt-6 bg-slate-50">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Pipeline de Vendas</h2>
+        <h2 className="text-h1 text-foreground">Pipeline de Vendas</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button
@@ -381,15 +381,17 @@ export default function SalesPipeline() {
               >
                 <div className="mb-4 flex flex-col gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-800">{stage}</h3>
+                    <h3 className="text-h3 text-foreground">{stage}</h3>
                     <Badge
                       variant="secondary"
-                      className="bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-medium"
+                      className="bg-muted text-muted-foreground hover:bg-muted/80 text-caption font-medium"
                     >
                       {columnOps.length}
                     </Badge>
                   </div>
-                  <div className="text-sm font-bold text-primary">{formatCurrency(totalValue)}</div>
+                  <div className="text-body font-bold text-primary">
+                    {formatCurrency(totalValue)}
+                  </div>
                 </div>
 
                 <div className="flex-1 space-y-3 overflow-y-auto pr-1">
@@ -414,10 +416,12 @@ export default function SalesPipeline() {
                         <CardContent className="flex flex-col gap-2 p-3">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-medium leading-tight text-slate-800 line-clamp-2">
+                              <h4 className="text-body font-medium leading-tight text-foreground line-clamp-2">
                                 {op.title}
                               </h4>
-                              <p className="text-xs text-slate-500 mt-1 truncate">{customerName}</p>
+                              <p className="text-caption text-muted-foreground mt-1 truncate">
+                                {customerName}
+                              </p>
                             </div>
                             <Avatar
                               className="h-6 w-6 border border-slate-100 flex-shrink-0"
