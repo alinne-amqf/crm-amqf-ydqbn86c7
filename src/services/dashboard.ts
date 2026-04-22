@@ -109,7 +109,7 @@ export const dashboardService = {
   async getRecentOpportunities() {
     const { data, error } = await supabase
       .from('opportunities')
-      .select('id, title, estimated_value, stage, created_at, customers(name, avatar)')
+      .select('id, title, estimated_value, stage, created_at, customers(name)')
       .order('created_at', { ascending: false })
       .limit(6)
 
