@@ -25,11 +25,11 @@ export const dashboardService = {
     }
 
     const buildQueries = (start?: string, end?: string) => {
-      let customersQuery = supabase.from('customers').select('*', { count: 'exact', head: true })
+      let customersQuery = supabase.from('customers').select('id', { count: 'exact' })
       let oppsQuery = supabase.from('opportunities').select('estimated_value, stage, created_at')
       let tasksQuery = supabase
         .from('tasks')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact' })
         .eq('status', 'pending')
 
       if (start && end) {
