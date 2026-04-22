@@ -444,8 +444,3 @@ export default function Dashboard() {
               )}
             </div>
           </Card>
-        </div>
-      </div>
-    </div>
-  )
-}
