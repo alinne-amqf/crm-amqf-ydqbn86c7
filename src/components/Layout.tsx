@@ -27,12 +27,12 @@ export default function Layout() {
                 <BreadcrumbItem className="hidden sm:block">
                   <BreadcrumbLink
                     href="#"
-                    className="text-muted-foreground hover:text-primary text-[12px]"
+                    className="text-text-tertiary hover:text-primary text-[12px]"
                   >
                     CRM
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden sm:block text-muted-foreground [&>svg]:w-3 [&>svg]:h-3" />
+                <BreadcrumbSeparator className="hidden sm:block text-text-tertiary [&>svg]:w-3 [&>svg]:h-3" />
                 <BreadcrumbItem>
                   <BreadcrumbPage className="font-semibold text-foreground text-[12px]">
                     Dashboard
@@ -43,23 +43,23 @@ export default function Layout() {
           </div>
           <div className="flex items-center gap-2">
             <div className="relative hidden sm:flex items-center">
-              <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 h-4 w-4 text-text-tertiary" />
               <input
                 type="text"
                 placeholder="Pesquisar..."
-                className="h-8 w-64 rounded-md border border-border bg-transparent pl-9 pr-3 text-[12px] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                className="py-[8px] px-[12px] w-64 rounded-[4px] border border-border bg-muted pl-9 text-[12px] placeholder:text-text-tertiary focus:border-primary focus:bg-white focus:outline-none"
               />
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:bg-accent hover:text-primary"
+              className="text-muted-foreground hover:bg-muted hover:text-primary [&>svg]:h-[20px] [&>svg]:w-[20px]"
             >
-              <Bell className="h-5 w-5" />
+              <Bell />
             </Button>
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:p-6 lg:p-8 overflow-y-auto bg-background">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:p-[16px] lg:p-[20px] overflow-y-auto bg-white">
           <Outlet />
         </main>
       </SidebarInset>

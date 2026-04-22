@@ -83,6 +83,10 @@ export default {
         },
         success: 'hsl(var(--success))',
         warning: 'hsl(var(--warning))',
+        error: 'hsl(var(--error))',
+        highlight: 'hsl(var(--highlight))',
+        action: 'hsl(var(--action))',
+        info: 'hsl(var(--info))',
         'text-tertiary': 'hsl(var(--text-tertiary))',
       },
       borderRadius: {

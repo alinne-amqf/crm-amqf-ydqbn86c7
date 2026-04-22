@@ -54,13 +54,13 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar variant="inset">
-      <SidebarHeader className="p-4 flex flex-row items-center gap-2 text-sidebar-foreground">
-        <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+    <Sidebar variant="sidebar" className="border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="p-[16px] flex flex-row items-center gap-2">
+        <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-white">
           <LifeBuoy className="size-5" />
         </div>
         <div className="flex flex-col gap-0.5 leading-none">
-          <span className="text-[16px] font-bold">CRM Nexus</span>
+          <span className="text-[16px] font-bold text-primary">CRM AMQF</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -76,13 +76,18 @@ export function AppSidebar() {
                       isActive={isActive}
                       tooltip={item.title}
                       className={cn(
-                        'h-auto py-3 px-4 text-[14px] font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground gap-2',
+                        'h-auto py-[12px] px-[16px] text-[14px] font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-primary cursor-pointer gap-[8px]',
                         isActive &&
-                          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground font-medium',
+                          'bg-[#E8F0FF] text-primary hover:bg-[#E8F0FF] hover:text-primary border-l-[3px] border-primary rounded-none',
                       )}
                     >
-                      <Link to={item.url} className="flex items-center gap-2 w-full">
-                        <item.icon className="h-5 w-5 shrink-0" />
+                      <Link to={item.url} className="flex items-center gap-[8px] w-full">
+                        <item.icon
+                          className={cn(
+                            'h-[20px] w-[20px] shrink-0',
+                            isActive ? 'text-primary' : 'text-muted-foreground',
+                          )}
+                        />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -93,7 +98,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-[16px]">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -103,7 +108,7 @@ export function AppSidebar() {
                   className="p-0 hover:bg-transparent data-[state=open]:bg-transparent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <div className="flex items-center gap-3 w-full">
-                    <Avatar className="h-8 w-8 rounded-full border border-sidebar-border">
+                    <Avatar className="h-[32px] w-[32px] rounded-full border-[2px] border-primary">
                       <AvatarImage
                         src={
                           profile?.avatar ||
@@ -117,14 +122,14 @@ export function AppSidebar() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left leading-tight">
-                      <span className="truncate text-[14px] font-semibold text-white">
+                      <span className="truncate text-[14px] font-semibold text-foreground">
                         {profile?.name || 'Usuário'}
                       </span>
-                      <span className="truncate text-[12px] font-normal text-[#CCCCCC]">
+                      <span className="truncate text-[12px] font-normal text-text-tertiary">
                         {profile?.email}
                       </span>
                     </div>
-                    <ChevronsUpDown className="ml-auto size-4 text-[#CCCCCC]" />
+                    <ChevronsUpDown className="ml-auto size-4 text-text-tertiary" />
                   </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>

@@ -6,14 +6,14 @@
 
 @layer base {
   :root {
-    --background: 0 0% 95.3%; /* #F3F3F3 */
-    --foreground: 0 0% 20%; /* #333333 */
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 0 0% 10%; /* #1A1A1A */
 
     --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 0 0% 20%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;
+    --popover-foreground: 0 0% 10%;
 
     --primary: 208 100% 41%; /* #0070D2 */
     --primary-foreground: 0 0% 100%;
@@ -21,39 +21,44 @@
     --secondary: 212 100% 25%; /* #003D82 */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 97.6%; /* #F9F9F9 */
+    --muted: 210 20% 98%; /* #F8F9FA */
     --muted-foreground: 0 0% 40%; /* #666666 */
 
-    --accent: 0 0% 97.6%; /* #F9F9F9 */
-    --accent-foreground: 0 0% 20%;
+    --accent: 210 20% 98%; /* #F8F9FA */
+    --accent-foreground: 0 0% 10%; /* #1A1A1A */
 
     --destructive: 1 68% 53%; /* #DA3633 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 82.7%; /* #D3D3D3 */
-    --input: 0 0% 82.7%;
+    --border: 0 0% 88%; /* #E0E0E0 */
+    --input: 0 0% 88%;
     --ring: 208 100% 41%;
 
-    --radius: 0.25rem; /* 4px border radius as per Salesforce style */
+    --radius: 0.5rem; /* 8px border radius */
 
-    --sidebar-background: 0 0% 10.6%; /* #1B1B1B */
-    --sidebar-foreground: 0 0% 100%; /* #FFFFFF */
+    --sidebar-background: 210 20% 98%; /* #F8F9FA */
+    --sidebar-foreground: 0 0% 10%; /* #1A1A1A */
     --sidebar-primary: 208 100% 41%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 17.6%; /* #2D2D2D */
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 17.6%; /* #2D2D2D */
+    --sidebar-accent: 210 16% 95%; /* #F0F2F5 */
+    --sidebar-accent-foreground: 208 100% 41%; /* #0070D2 */
+    --sidebar-border: 0 0% 88%; /* #E0E0E0 */
     --sidebar-ring: 208 100% 41%;
 
     --success: 145 57% 41%; /* #2DA44E */
-    --warning: 31 52% 64%; /* #D4A574 */
+    --warning: 38 90% 55%; /* #F5A623 */
+    --error: 1 68% 53%; /* #DA3633 */
+    --highlight: 260 88% 60%; /* #7B3FF2 */
+    --action: 16 100% 60%; /* #FF6B35 */
+    --info: 180 100% 32%; /* #00A3A3 */
+
     --text-tertiary: 0 0% 60%; /* #999999 */
 
     --chart-1: 208 100% 41%;
-    --chart-2: 212 100% 25%;
+    --chart-2: 260 88% 60%;
     --chart-3: 145 57% 41%;
-    --chart-4: 31 52% 64%;
-    --chart-5: 1 68% 53%;
+    --chart-4: 38 90% 55%;
+    --chart-5: 16 100% 60%;
   }
 
   .dark {
@@ -85,7 +90,11 @@
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 208 100% 41%;
     --success: 145 57% 41%;
-    --warning: 31 52% 64%;
+    --warning: 38 90% 55%;
+    --error: 1 68% 53%;
+    --highlight: 260 88% 60%;
+    --action: 16 100% 60%;
+    --info: 180 100% 32%;
     --text-tertiary: 0 0% 40%;
   }
 
