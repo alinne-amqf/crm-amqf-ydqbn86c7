@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 interface DashboardData {
