@@ -18,40 +18,44 @@ export default function Layout() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-[#1B1B1B] text-white px-4 sticky top-0 z-10 shadow-sm">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-white px-4 sticky top-0 z-10">
           <div className="flex items-center gap-2">
-            <SidebarTrigger className="-ml-1 text-white hover:text-white/80" />
-            <Separator orientation="vertical" className="mr-2 h-4 bg-white/20" />
+            <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-primary" />
+            <Separator orientation="vertical" className="mr-2 h-4 bg-border" />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden sm:block">
-                  <BreadcrumbLink href="#" className="text-white/80 hover:text-white text-body">
+                  <BreadcrumbLink
+                    href="#"
+                    className="text-muted-foreground hover:text-primary text-[12px]"
+                  >
                     CRM
                   </BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden sm:block text-white/50" />
+                <BreadcrumbSeparator className="hidden sm:block text-muted-foreground [&>svg]:w-3 [&>svg]:h-3" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="font-semibold text-white text-body">
-                    Clientes
+                  <BreadcrumbPage className="font-semibold text-foreground text-[12px]">
+                    Dashboard
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
           <div className="flex items-center gap-2">
+            <div className="relative hidden sm:flex items-center">
+              <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Pesquisar..."
+                className="h-8 w-64 rounded-md border border-border bg-transparent pl-9 pr-3 text-[12px] placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+              />
+            </div>
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-white/10 hover:text-white"
+              className="text-muted-foreground hover:bg-accent hover:text-primary"
             >
-              <Search className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10 hover:text-white"
-            >
-              <Bell className="h-4 w-4" />
+              <Bell className="h-5 w-5" />
             </Button>
           </div>
         </header>

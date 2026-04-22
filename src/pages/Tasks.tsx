@@ -176,36 +176,36 @@ export default function TasksPage() {
   const completedTasks = tasks.filter((t) => t.status === 'completed')
 
   const TaskItem = ({ task }: { task: Task }) => (
-    <div className="flex items-start justify-between p-4 border rounded-xl bg-white hover:border-primary/50 transition-colors shadow-sm mb-3 group">
+    <div className="flex items-start justify-between p-4 border border-border rounded-md bg-white hover:bg-muted transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.08)] mb-3 group">
       <div className="flex items-start gap-4">
         <button
           onClick={() => handleToggleStatus(task)}
-          className={`mt-0.5 transition-colors ${task.status === 'completed' ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-500'}`}
+          className={`mt-0.5 transition-colors ${task.status === 'completed' ? 'text-success' : 'text-muted-foreground hover:text-success'}`}
         >
           {task.status === 'completed' ? (
-            <CheckCircle2 className="h-6 w-6" />
+            <CheckCircle2 className="h-5 w-5" />
           ) : (
-            <Circle className="h-6 w-6" />
+            <Circle className="h-5 w-5" />
           )}
         </button>
         <div>
           <h4
-            className={`text-body font-medium ${task.status === 'completed' ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+            className={`text-[14px] font-semibold ${task.status === 'completed' ? 'line-through text-muted-foreground' : 'text-foreground'}`}
           >
             {task.title}
           </h4>
-          <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[12px] text-muted-foreground">
             <span className="flex items-center font-medium">
-              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded uppercase font-bold text-[10px] mr-2">
+              <span className="bg-accent text-foreground border border-border px-2 py-0.5 rounded-sm uppercase font-bold text-[10px] mr-2">
                 {task.type}
               </span>
               {task.customers?.name} {task.customers?.company && `(${task.customers.company})`}
             </span>
             <span className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              {format(new Date(task.due_date), "dd 'de' MMMM", { locale: ptBR })}
+              {format(new Date(task.due_date), 'dd/MM/yyyy', { locale: ptBR })}
             </span>
-            <span className="flex items-center gap-1 text-amber-600 font-medium">
+            <span className="flex items-center gap-1 text-warning font-medium">
               <Clock className="h-3.5 w-3.5" />
               {format(new Date(task.due_date), 'HH:mm', { locale: ptBR })}
             </span>
@@ -285,16 +285,19 @@ export default function TasksPage() {
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-center bg-white border border-dashed rounded-xl">
-                  <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                    <LayoutList className="h-6 w-6 text-slate-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-800">Tudo em dia!</h3>
-                  <p className="text-sm text-slate-500 mt-1 max-w-sm">
-                    Você não tem tarefas pendentes. Aproveite para criar novos acompanhamentos.
+                <div className="flex flex-col items-center justify-center py-12 text-center bg-white border border-border rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+                  <LayoutList className="h-12 w-12 text-border mb-4" />
+                  <h3 className="text-[16px] font-semibold text-foreground">
+                    Nenhuma tarefa pendente
+                  </h3>
+                  <p className="text-[14px] text-muted-foreground mt-1 max-w-sm">
+                    Sua agenda está livre no momento.
                   </p>
-                  <Button variant="outline" className="mt-4" onClick={() => setIsDialogOpen(true)}>
-                    Criar nova tarefa
+                  <Button
+                    className="mt-6 bg-primary text-white hover:bg-secondary"
+                    onClick={() => setIsDialogOpen(true)}
+                  >
+                    Nova Tarefa
                   </Button>
                 </div>
               )}

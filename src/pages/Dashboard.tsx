@@ -97,13 +97,13 @@ export default function Dashboard() {
     label?: string
   }) => {
     if (value === null)
-      return <p className="text-xs text-slate-500 mt-1 opacity-0">Sem comparação</p>
+      return <p className="text-[12px] text-muted-foreground mt-2 opacity-0">Sem comparação</p>
     const isPositive = value >= 0
     return (
       <div
         className={cn(
-          'flex items-center text-xs font-medium mt-1',
-          isPositive ? 'text-emerald-600' : 'text-rose-600',
+          'flex items-center text-[12px] mt-2',
+          isPositive ? 'text-success font-medium' : 'text-destructive font-medium',
         )}
       >
         {isPositive ? (
@@ -111,7 +111,7 @@ export default function Dashboard() {
         ) : (
           <TrendingDown className="h-3 w-3 mr-1" />
         )}
-        {Math.abs(value)}% <span className="text-slate-500 font-normal ml-1">{label}</span>
+        {Math.abs(value)}% <span className="text-muted-foreground font-normal ml-1">{label}</span>
       </div>
     )
   }
@@ -176,155 +176,115 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-small font-medium text-muted-foreground">
+        <Card className="p-4 hover:bg-muted transition-colors cursor-pointer flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="h-4 w-4 text-primary" />
+            <h3 className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">
               Clientes no Período
-            </CardTitle>
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Users className="h-4 w-4 text-primary" />
+            </h3>
+          </div>
+          <div>
+            <div className="text-[24px] font-bold text-primary leading-none">
+              {data?.metrics.totalCustomers}
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-h2 text-foreground">{data?.metrics.totalCustomers}</div>
             <GrowthIndicator value={data?.metrics.customersGrowth ?? null} />
-          </CardContent>
+          </div>
         </Card>
 
-        <Card className="rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-small font-medium text-muted-foreground">
+        <Card className="p-4 hover:bg-muted transition-colors cursor-pointer flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center gap-2 mb-2">
+            <Briefcase className="h-4 w-4 text-primary" />
+            <h3 className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">
               Valor em Pipeline
-            </CardTitle>
-            <div className="h-8 w-8 rounded-full bg-warning/10 flex items-center justify-center">
-              <Briefcase className="h-4 w-4 text-warning" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-h2 text-foreground">
+            </h3>
+          </div>
+          <div>
+            <div className="text-[24px] font-bold text-primary leading-none">
               {formatCurrency(data?.metrics.pipelineValue || 0)}
             </div>
             <GrowthIndicator value={data?.metrics.pipelineGrowth ?? null} />
-          </CardContent>
+          </div>
         </Card>
 
-        <Card className="rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-small font-medium text-muted-foreground">
+        <Card className="p-4 hover:bg-muted transition-colors cursor-pointer flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle2 className="h-4 w-4 text-primary" />
+            <h3 className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">
               Valor Ganho
-            </CardTitle>
-            <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-h2 text-foreground">
+            </h3>
+          </div>
+          <div>
+            <div className="text-[24px] font-bold text-primary leading-none">
               {formatCurrency(data?.metrics.wonValue || 0)}
             </div>
             <GrowthIndicator value={data?.metrics.wonGrowth ?? null} />
-          </CardContent>
+          </div>
         </Card>
 
-        <Card className="rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-small font-medium text-muted-foreground">
+        <Card className="p-4 hover:bg-muted transition-colors cursor-pointer flex flex-col justify-between min-h-[120px]">
+          <div className="flex items-center gap-2 mb-2">
+            <ListTodo className="h-4 w-4 text-primary" />
+            <h3 className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">
               Tarefas no Período
-            </CardTitle>
-            <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
-              <ListTodo className="h-4 w-4 text-destructive" />
+            </h3>
+          </div>
+          <div>
+            <div className="text-[24px] font-bold text-primary leading-none">
+              {data?.metrics.pendingTasks}
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-h2 text-foreground">{data?.metrics.pendingTasks}</div>
             <GrowthIndicator value={data?.metrics.tasksGrowth ?? null} />
-          </CardContent>
+          </div>
         </Card>
       </div>
 
-      <div className="bg-background rounded-[2.5rem] p-6 sm:p-8 space-y-8">
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-h2 text-foreground">Oportunidades Recentes</h2>
+      <div className="bg-transparent space-y-8 mt-8">
+        <Card className="p-5 border border-border shadow-[0_1px_3px_rgba(0,0,0,0.08)] bg-white rounded-md">
+          <div className="flex items-center justify-between mb-4 border-b border-border pb-4">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-primary" />
+              <h2 className="text-[18px] font-semibold text-foreground">Oportunidades Recentes</h2>
+            </div>
             <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full h-8 w-8 text-slate-500"
+              variant="outline"
+              size="sm"
+              className="text-[12px] h-8 text-primary border-border hover:bg-muted"
               asChild
             >
-              <Link to="/vendas">
-                <ArrowUpRight className="h-5 w-5" />
-              </Link>
+              <Link to="/vendas">Ver Todas</Link>
             </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data?.recentOpportunities?.map((opp, index) => {
-              const style = CARD_STYLES[index % CARD_STYLES.length]
-              const isDark = style.includes('text-white')
-
               return (
                 <div
                   key={opp.id}
-                  className={cn(
-                    'p-6 rounded-[2rem] flex flex-col justify-between min-h-[160px] transition-transform hover:scale-[1.02]',
-                    style,
-                  )}
+                  className="p-4 rounded-md border border-border bg-white flex flex-col justify-between min-h-[140px] hover:bg-muted transition-colors cursor-pointer"
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <span
-                      className={cn(
-                        'text-xs font-medium opacity-80',
-                        isDark ? 'text-white/80' : 'text-slate-500',
-                      )}
-                    >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[12px] text-muted-foreground font-medium">
                       {format(new Date(opp.created_at), 'd MMM', { locale: ptBR })}
                     </span>
-                    <button
-                      className={cn(
-                        'opacity-80 hover:opacity-100',
-                        isDark ? 'text-white' : 'text-slate-500',
-                      )}
+                    <Badge
+                      variant="outline"
+                      className="text-[11px] font-normal bg-accent border-border text-foreground"
                     >
-                      <MoreHorizontal className="h-5 w-5" />
-                    </button>
+                      {opp.stage}
+                    </Badge>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-lg leading-tight mb-1 line-clamp-1">
+                    <h3 className="font-semibold text-[16px] text-foreground leading-tight mb-1 line-clamp-1">
                       {opp.title}
                     </h3>
-                    <p
-                      className={cn(
-                        'text-xs mb-4 opacity-80',
-                        isDark ? 'text-white/70' : 'text-slate-500',
-                      )}
-                    >
-                      {opp.stage}
+                    <p className="text-[12px] text-muted-foreground mb-4 line-clamp-1">
+                      {opp.customers?.name || 'Cliente'}
                     </p>
 
                     <div className="flex items-end justify-between mt-auto">
-                      <span className="text-2xl font-bold tracking-tight">
+                      <span className="text-[18px] font-bold text-primary">
                         {formatCurrency(Number(opp.estimated_value))}
                       </span>
-
-                      <div className="flex -space-x-2">
-                        {opp.customers?.avatar ? (
-                          <Avatar className="h-8 w-8 border-2 border-transparent bg-white/20">
-                            <AvatarImage src={opp.customers.avatar} />
-                          </Avatar>
-                        ) : (
-                          <Avatar className="h-8 w-8 border-2 border-transparent bg-white/20">
-                            <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">
-                              {opp.customers?.name?.substring(0, 2).toUpperCase() || 'CL'}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                        <Avatar className="h-8 w-8 border-2 border-transparent bg-white/20">
-                          <AvatarImage
-                            src={`https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${index}`}
-                          />
-                        </Avatar>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -332,34 +292,35 @@ export default function Dashboard() {
             })}
 
             {(!data?.recentOpportunities || data.recentOpportunities.length === 0) && (
-              <div className="col-span-full py-10 text-center text-slate-500">
+              <div className="col-span-full py-10 text-center text-muted-foreground">
                 Nenhuma oportunidade recente encontrada.
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-card rounded-[2rem] p-6 shadow-sm border flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-h2 text-foreground">Funil de Vendas</h2>
+          <Card className="p-5 border border-border shadow-[0_1px_3px_rgba(0,0,0,0.08)] bg-white rounded-md flex flex-col">
+            <div className="flex items-center justify-between mb-4 border-b border-border pb-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <h2 className="text-[18px] font-semibold text-foreground">Funil de Vendas</h2>
+              </div>
               <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full h-8 w-8 text-slate-500"
+                variant="outline"
+                size="sm"
+                className="text-[12px] h-8 text-primary border-border hover:bg-muted"
                 asChild
               >
-                <Link to="/vendas">
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
+                <Link to="/vendas">Detalhes</Link>
               </Button>
             </div>
 
             <div className="mb-6">
-              <span className="text-3xl font-bold tracking-tight text-slate-900">
+              <span className="text-[24px] font-bold tracking-tight text-primary">
                 {formatCurrency(data?.metrics.pipelineValue || 0)}
               </span>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-[12px] text-muted-foreground mt-1">
                 Total em Pipeline (
                 {period === 'month'
                   ? 'Mês Atual'
@@ -377,96 +338,111 @@ export default function Dashboard() {
                     data={data.metrics.funnelData}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8E8E8" />
                     <XAxis
                       dataKey="stage"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 12 }}
+                      tick={{ fill: '#666666', fontSize: 12 }}
                       dy={10}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 12 }}
+                      tick={{ fill: '#666666', fontSize: 12 }}
                       tickFormatter={(val) => `R$${val / 1000}k`}
                     />
                     <ChartTooltip
-                      cursor={{ fill: '#f8fafc' }}
+                      cursor={{ fill: '#F9F9F9' }}
                       content={
-                        <ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />
+                        <ChartTooltipContent
+                          className="bg-[#1B1B1B] text-white border-none shadow-md rounded-md"
+                          formatter={(value) => formatCurrency(Number(value))}
+                        />
                       }
                     />
-                    <Bar
-                      dataKey="value"
-                      fill="var(--color-value)"
-                      radius={[6, 6, 0, 0]}
-                      barSize={40}
-                    />
+                    <Bar dataKey="value" fill="#0070D2" radius={[2, 2, 0, 0]} barSize={40} />
                   </BarChart>
                 </ChartContainer>
               ) : (
-                <div className="h-full w-full flex items-center justify-center text-slate-400 text-sm pb-8">
+                <div className="h-full w-full flex items-center justify-center text-muted-foreground text-[12px] pb-8">
                   Dados insuficientes para o gráfico
                 </div>
               )}
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-card rounded-[2rem] p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-h2 text-foreground">Agenda de Tarefas</h2>
-              <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" asChild>
-                <Link to="/tarefas">
-                  <CalendarIcon className="h-4 w-4 text-slate-500" />
-                </Link>
+          <Card className="p-5 border border-border shadow-[0_1px_3px_rgba(0,0,0,0.08)] bg-white rounded-md">
+            <div className="flex items-center justify-between mb-4 border-b border-border pb-4">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5 text-primary" />
+                <h2 className="text-[18px] font-semibold text-foreground">Agenda de Tarefas</h2>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[12px] h-8 text-primary border-border hover:bg-muted"
+                asChild
+              >
+                <Link to="/tarefas">Ver Calendário</Link>
               </Button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-0">
               {data?.upcomingTasks?.map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/80 hover:bg-slate-100 transition-colors"
+                  className="flex items-center justify-between p-3 border-b border-border last:border-0 hover:bg-muted transition-colors cursor-pointer"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <div
                       className={cn(
-                        'h-10 w-10 rounded-full flex items-center justify-center',
+                        'h-8 w-8 rounded-md flex items-center justify-center',
                         task.type === 'call'
-                          ? 'bg-blue-100 text-blue-600'
+                          ? 'bg-blue-50 text-blue-600'
                           : task.type === 'meeting'
-                            ? 'bg-purple-100 text-purple-600'
+                            ? 'bg-purple-50 text-purple-600'
                             : task.type === 'email'
-                              ? 'bg-amber-100 text-amber-600'
-                              : 'bg-slate-200 text-slate-600',
+                              ? 'bg-amber-50 text-amber-600'
+                              : 'bg-muted text-muted-foreground',
                       )}
                     >
-                      <ListTodo className="h-5 w-5" />
+                      <ListTodo className="h-4 w-4" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-900 text-sm">{task.title}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <h4 className="font-semibold text-foreground text-[14px]">{task.title}</h4>
+                      <p className="text-[12px] text-muted-foreground mt-0.5">
                         {task.customers?.name} •{' '}
                         {format(new Date(task.due_date), "dd/MM 'às' HH:mm")}
                       </p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 hover:text-primary"
+                    asChild
+                  >
                     <Link to="/tarefas">
-                      <ArrowUpRight className="h-4 w-4 text-slate-400" />
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                     </Link>
                   </Button>
                 </div>
               ))}
 
               {(!data?.upcomingTasks || data.upcomingTasks.length === 0) && (
-                <div className="py-8 text-center text-slate-500 text-sm">
-                  Nenhuma tarefa pendente próxima.
+                <div className="py-8 text-center text-muted-foreground text-[12px] flex flex-col items-center justify-center">
+                  <ListTodo className="h-12 w-12 text-border mb-2" />
+                  <p className="text-[16px] font-semibold text-foreground">
+                    Nenhuma tarefa pendente
+                  </p>
+                  <p className="text-[14px] text-muted-foreground mt-1">
+                    Sua agenda está livre no momento.
+                  </p>
                 </div>
               )}
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

@@ -21,10 +21,10 @@
     --secondary: 212 100% 25%; /* #003D82 */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 90%;
+    --muted: 0 0% 97.6%; /* #F9F9F9 */
     --muted-foreground: 0 0% 40%; /* #666666 */
 
-    --accent: 0 0% 90%;
+    --accent: 0 0% 97.6%; /* #F9F9F9 */
     --accent-foreground: 0 0% 20%;
 
     --destructive: 1 68% 53%; /* #DA3633 */
@@ -34,15 +34,15 @@
     --input: 0 0% 82.7%;
     --ring: 208 100% 41%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem; /* 4px border radius as per Salesforce style */
 
     --sidebar-background: 0 0% 10.6%; /* #1B1B1B */
     --sidebar-foreground: 0 0% 100%; /* #FFFFFF */
     --sidebar-primary: 208 100% 41%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 20%;
+    --sidebar-accent: 0 0% 17.6%; /* #2D2D2D */
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 20%;
+    --sidebar-border: 0 0% 17.6%; /* #2D2D2D */
     --sidebar-ring: 208 100% 41%;
 
     --success: 145 57% 41%; /* #2DA44E */

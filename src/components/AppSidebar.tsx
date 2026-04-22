@@ -55,12 +55,11 @@ export function AppSidebar() {
   return (
     <Sidebar variant="inset">
       <SidebarHeader className="p-4 flex flex-row items-center gap-2 text-sidebar-foreground">
-        <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <LifeBuoy className="size-5" />
         </div>
         <div className="flex flex-col gap-0.5 leading-none">
-          <span className="text-h3">CRM Nexus</span>
-          <span className="text-caption opacity-80">Workspace</span>
+          <span className="text-[16px] font-bold">CRM Nexus</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -71,9 +70,18 @@ export function AppSidebar() {
                 const isActive = location.pathname === item.url
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                      <Link to={item.url}>
-                        <item.icon />
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.title}
+                      className={cn(
+                        'h-auto py-3 px-4 text-[14px] font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground gap-2',
+                        isActive &&
+                          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground font-medium',
+                      )}
+                    >
+                      <Link to={item.url} className="flex items-center gap-2 w-full">
+                        <item.icon className="h-5 w-5 shrink-0" />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -84,33 +92,39 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="p-0 hover:bg-transparent data-[state=open]:bg-transparent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage
-                      src={
-                        profile?.avatar ||
-                        `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`
-                      }
-                      alt={profile?.name || ''}
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="rounded-lg">
-                      {profile?.name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-body leading-tight">
-                    <span className="truncate font-semibold">{profile?.name || 'Usuário'}</span>
-                    <span className="truncate text-caption opacity-80">{profile?.email}</span>
+                  <div className="flex items-center gap-3 w-full">
+                    <Avatar className="h-8 w-8 rounded-full border border-sidebar-border">
+                      <AvatarImage
+                        src={
+                          profile?.avatar ||
+                          `https://img.usecurling.com/ppl/thumbnail?gender=male&seed=${profile?.id || 99}`
+                        }
+                        alt={profile?.name || ''}
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="rounded-full">
+                        {profile?.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid flex-1 text-left leading-tight">
+                      <span className="truncate text-[14px] font-semibold text-white">
+                        {profile?.name || 'Usuário'}
+                      </span>
+                      <span className="truncate text-[12px] font-normal text-[#CCCCCC]">
+                        {profile?.email}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="ml-auto size-4 text-[#CCCCCC]" />
                   </div>
-                  <ChevronsUpDown className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent

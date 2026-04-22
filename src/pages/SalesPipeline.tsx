@@ -375,21 +375,21 @@ export default function SalesPipeline() {
             return (
               <div
                 key={stage}
-                className="flex w-80 flex-shrink-0 flex-col rounded-xl bg-white shadow-sm p-4 transition-colors hover:shadow-md border border-slate-100"
+                className="flex w-80 flex-shrink-0 flex-col rounded-md bg-muted border border-border shadow-sm p-4 transition-colors"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, stage)}
               >
-                <div className="mb-4 flex flex-col gap-2 border-b border-slate-100 pb-3">
+                <div className="mb-4 flex flex-col gap-2 border-b border-border pb-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-h3 text-foreground">{stage}</h3>
+                    <h3 className="text-[14px] font-semibold text-foreground">{stage}</h3>
                     <Badge
-                      variant="secondary"
-                      className="bg-muted text-muted-foreground hover:bg-muted/80 text-caption font-medium"
+                      variant="outline"
+                      className="bg-white border-border text-muted-foreground text-[11px] font-medium px-2 py-0"
                     >
                       {columnOps.length}
                     </Badge>
                   </div>
-                  <div className="text-body font-bold text-primary">
+                  <div className="text-[14px] font-bold text-primary">
                     {formatCurrency(totalValue)}
                   </div>
                 </div>
@@ -411,36 +411,36 @@ export default function SalesPipeline() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, op.id)}
                         onClick={() => handleEdit(op)}
-                        className="cursor-grab transition-all hover:border-slate-300 hover:shadow-md active:cursor-grabbing bg-white border border-slate-200 shadow-sm rounded-lg"
+                        className="cursor-grab transition-all hover:bg-muted active:cursor-grabbing bg-white border border-border shadow-[0_1px_3px_rgba(0,0,0,0.08)] rounded-md"
                       >
                         <CardContent className="flex flex-col gap-2 p-3">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-body font-medium leading-tight text-foreground line-clamp-2">
+                              <h4 className="text-[14px] font-semibold leading-tight text-primary line-clamp-2 hover:underline">
                                 {op.title}
                               </h4>
-                              <p className="text-caption text-muted-foreground mt-1 truncate">
+                              <p className="text-[12px] text-foreground mt-1 truncate">
                                 {customerName}
                               </p>
                             </div>
                             <Avatar
-                              className="h-6 w-6 border border-slate-100 flex-shrink-0"
+                              className="h-6 w-6 border border-border flex-shrink-0"
                               title={responsibleName}
                             >
-                              <AvatarFallback className="bg-slate-100 text-[10px] font-medium text-slate-600">
+                              <AvatarFallback className="bg-accent text-[10px] font-medium text-foreground">
                                 {getInitials(responsibleName)}
                               </AvatarFallback>
                             </Avatar>
                           </div>
 
-                          <div className="flex items-center justify-between mt-1">
-                            <div className="text-sm font-bold text-emerald-600">
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                            <div className="text-[12px] font-bold text-success">
                               {formatCurrency(op.estimatedValue)}
                             </div>
 
                             {pendingCount > 0 && (
                               <div
-                                className="flex items-center text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                                className="flex items-center text-warning font-medium text-[11px]"
                                 title={`${pendingCount} tarefa(s) pendente(s)`}
                               >
                                 <CheckSquare className="h-3 w-3 mr-1" />
@@ -453,7 +453,7 @@ export default function SalesPipeline() {
                     )
                   })}
                   {columnOps.length === 0 && (
-                    <div className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 text-xs text-slate-400 font-medium">
+                    <div className="flex h-24 items-center justify-center rounded-md border-2 border-dashed border-border bg-white/50 text-[12px] text-muted-foreground font-medium">
                       Solte aqui
                     </div>
                   )}
