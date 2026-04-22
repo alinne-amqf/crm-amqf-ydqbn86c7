@@ -124,40 +124,6 @@ export default function Dashboard() {
     },
   }
 
-  const GrowthIndicator = ({
-    value,
-    label = 'em relação ao período anterior',
-  }: {
-    value: number | null
-    label?: string
-  }) => {
-    if (value === null)
-      return <p className="text-[12px] text-muted-foreground mt-2 opacity-0">Sem comparação</p>
-    const isPositive = value >= 0
-    return (
-      <div
-        className={cn(
-          'flex items-center text-[12px] mt-2 font-normal',
-          isPositive ? 'text-success' : 'text-error',
-        )}
-      >
-        {isPositive ? (
-          <TrendingUp className="h-3 w-3 mr-1" />
-        ) : (
-          <TrendingDown className="h-3 w-3 mr-1" />
-        )}
-        {Math.abs(value)}% <span className="text-muted-foreground ml-1">{label}</span>
-      </div>
-    )
-  }
-
-  const chartConfig = {
-    value: {
-      label: 'Valor',
-      color: 'hsl(var(--primary))',
-    },
-  }
-
   if (isLoading && !data) {
     return (
       <div className="w-full max-w-7xl mx-auto space-y-[20px] animate-pulse pb-10">
