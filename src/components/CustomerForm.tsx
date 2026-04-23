@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, User, Building2 } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import {
   Form,
   FormControl,
@@ -111,21 +112,73 @@ export function CustomerForm({ initialData, onSubmit, onCancel }: CustomerFormPr
                 <RadioGroup
                   onValueChange={field.onChange}
                   value={field.value}
-                  className="flex flex-row gap-4"
+                  className="flex flex-col sm:flex-row gap-2 lg:gap-3 w-full"
                 >
-                  <FormItem className="flex items-center space-x-2 space-y-0">
+                  <FormItem className="w-full space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="B2C" />
+                      <RadioGroupItem
+                        value="B2C"
+                        className="peer sr-only"
+                        disabled={isSubmitting}
+                      />
                     </FormControl>
-                    <FormLabel className="font-normal cursor-pointer">
+                    <FormLabel
+                      className={cn(
+                        'flex w-full items-center justify-center gap-2 px-4 py-3 rounded-[6px] text-[14px] font-medium transition-all duration-200 ease-in-out cursor-pointer',
+                        'peer-focus-visible:ring-2 peer-focus-visible:ring-[#0070D2] peer-focus-visible:ring-offset-2',
+                        isSubmitting
+                          ? 'bg-[#F8F9FA] border border-[#E0E0E0] text-[#CCCCCC] opacity-50 cursor-not-allowed pointer-events-none'
+                          : field.value === 'B2C'
+                            ? 'bg-[#F0E8FF] border-2 border-[#7B3FF2] text-[#7B3FF2] hover:bg-[#F0E8FF] hover:shadow-[0_2px_6px_rgba(123,63,242,0.15)]'
+                            : 'bg-[#F0F2F5] border border-[#D3D3D3] text-[#666666] hover:bg-[#E8E8E8]',
+                      )}
+                      aria-pressed={field.value === 'B2C'}
+                      aria-label="Classificar como B2C"
+                    >
+                      <User
+                        className={cn(
+                          'w-4 h-4 transition-colors',
+                          isSubmitting
+                            ? 'text-[#CCCCCC]'
+                            : field.value === 'B2C'
+                              ? 'text-[#7B3FF2]'
+                              : 'text-[#999999]',
+                        )}
+                      />
                       Pessoa Física (B2C)
                     </FormLabel>
                   </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
+                  <FormItem className="w-full space-y-0">
                     <FormControl>
-                      <RadioGroupItem value="B2B" />
+                      <RadioGroupItem
+                        value="B2B"
+                        className="peer sr-only"
+                        disabled={isSubmitting}
+                      />
                     </FormControl>
-                    <FormLabel className="font-normal cursor-pointer">
+                    <FormLabel
+                      className={cn(
+                        'flex w-full items-center justify-center gap-2 px-4 py-3 rounded-[6px] text-[14px] font-medium transition-all duration-200 ease-in-out cursor-pointer',
+                        'peer-focus-visible:ring-2 peer-focus-visible:ring-[#0070D2] peer-focus-visible:ring-offset-2',
+                        isSubmitting
+                          ? 'bg-[#F8F9FA] border border-[#E0E0E0] text-[#CCCCCC] opacity-50 cursor-not-allowed pointer-events-none'
+                          : field.value === 'B2B'
+                            ? 'bg-[#E8F0FF] border-2 border-[#0070D2] text-[#0070D2] hover:bg-[#E8F0FF] hover:shadow-[0_2px_6px_rgba(0,112,210,0.15)]'
+                            : 'bg-[#F0F2F5] border border-[#D3D3D3] text-[#666666] hover:bg-[#E8E8E8]',
+                      )}
+                      aria-pressed={field.value === 'B2B'}
+                      aria-label="Classificar como B2B"
+                    >
+                      <Building2
+                        className={cn(
+                          'w-4 h-4 transition-colors',
+                          isSubmitting
+                            ? 'text-[#CCCCCC]'
+                            : field.value === 'B2B'
+                              ? 'text-[#0070D2]'
+                              : 'text-[#999999]',
+                        )}
+                      />
                       Pessoa Jurídica (B2B)
                     </FormLabel>
                   </FormItem>
