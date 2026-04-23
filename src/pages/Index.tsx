@@ -367,4 +367,8 @@ export default function Index() {
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogC
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
