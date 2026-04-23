@@ -234,8 +234,8 @@ export default function Index() {
                             {customer.name}
                           </span>
                           <Badge
-                            variant="secondary"
-                            className="text-caption h-5 px-1.5 font-medium"
+                            variant="outline"
+                            className="text-caption h-5 px-1.5 font-medium bg-indigo-100 text-indigo-800 border-indigo-200"
                           >
                             {customer.customerType}
                           </Badge>
