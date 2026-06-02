@@ -5,7 +5,8 @@ import bcrypt from 'npm:bcryptjs@2.4.3'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 function generatePassword() {
@@ -15,17 +16,20 @@ function generatePassword() {
   const symbols = '!@#$%^&*'
   const all = upper + lower + numbers + symbols
   let password = ''
-  
+
   password += upper[Math.floor(Math.random() * upper.length)]
   password += lower[Math.floor(Math.random() * lower.length)]
   password += numbers[Math.floor(Math.random() * numbers.length)]
   password += symbols[Math.floor(Math.random() * symbols.length)]
-  
+
   for (let i = 0; i < 8; i++) {
     password += all[Math.floor(Math.random() * all.length)]
   }
-  
-  return password.split('').sort(() => 0.5 - Math.random()).join('')
+
+  return password
+    .split('')
+    .sort(() => 0.5 - Math.random())
+    .join('')
 }
 
 Deno.serve(async (req: Request) => {
@@ -45,15 +49,18 @@ Deno.serve(async (req: Request) => {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } },
     )
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    const { data: { user: adminUser }, error: authError } = await supabaseClient.auth.getUser()
+    const {
+      data: { user: adminUser },
+      error: authError,
+    } = await supabaseClient.auth.getUser()
     if (authError || !adminUser) {
       return new Response(JSON.stringify({ error: 'Nao autorizado' }), {
         status: 401,
@@ -98,16 +105,23 @@ Deno.serve(async (req: Request) => {
     }
 
     if (targetProfile.has_accessed) {
-      return new Response(JSON.stringify({ error: 'Usuario ja acessou. Nao e possivel gerar nova senha temporaria.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({
+          error: 'Usuario ja acessou. Nao e possivel gerar nova senha temporaria.',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     const password = generatePassword()
     const hash = bcrypt.hashSync(password, 10)
 
-    const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password })
+    const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+      password,
+    })
     if (updateAuthError) {
       throw updateAuthError
     }
@@ -118,14 +132,13 @@ Deno.serve(async (req: Request) => {
       user_id: adminUser.id,
       target_user_id: user_id,
       action: 'password_generated',
-      status: 'success'
+      status: 'success',
     })
 
     return new Response(JSON.stringify({ message: 'Senha gerada com sucesso', password }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-
   } catch (err: any) {
     return new Response(JSON.stringify({ error: 'Erro ao processar solicitacao.' }), {
       status: 500,
