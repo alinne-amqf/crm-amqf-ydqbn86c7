@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { PipelineStage } from '@/lib/types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -104,6 +105,21 @@ export default function SalesPipeline() {
     customerId: '',
   })
   const [isSubmittingTask, setIsSubmittingTask] = useState(false)
+
+  const [searchParams] = useSearchParams()
+  const [stageFilter, setStageFilter] = useState<string>('all')
+
+  useEffect(() => {
+    const stage = searchParams.get('stage')
+    const status = searchParams.get('status')
+    if (stage) {
+      setStageFilter(stage)
+    } else if (status === 'Fechado' || status === 'Ganho') {
+      setStageFilter('Fechado/Ganho')
+    } else if (status === 'Perdido') {
+      setStageFilter('Fechado/Perdido')
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchData()
@@ -714,6 +730,20 @@ export default function SalesPipeline() {
           </DialogContent>
         </Dialog>
 
+        <Select value={stageFilter} onValueChange={setStageFilter}>
+          <SelectTrigger className="w-[200px] bg-white">
+            <SelectValue placeholder="Todos os estágios" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os estágios</SelectItem>
+            {STAGES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         {/* Modal Interceptador de Mudança de Estágio (Drag & Drop) */}
         <Dialog
           open={isStageModalOpen}
@@ -800,7 +830,7 @@ export default function SalesPipeline() {
         </div>
       ) : (
         <div className="flex flex-1 gap-6 overflow-x-auto pb-6 scroll-smooth">
-          {STAGES.map((stage) => {
+          {STAGES.filter((stage) => stageFilter === 'all' || stage === stageFilter).map((stage) => {
             const columnOps = opportunities.filter((op) => op.stage === stage)
             const totalValue = columnOps.reduce((sum, op) => sum + op.estimatedValue, 0)
 

@@ -40,8 +40,8 @@ export function AppSidebar() {
   const { profile, signOut } = useAuth()
 
   const navItems = [
-    { title: 'Dashboard', icon: LayoutDashboard, url: '/dashboard' },
-    { title: 'Clientes', icon: Users, url: '/' },
+    { title: 'Dashboard', icon: LayoutDashboard, url: '/' },
+    { title: 'Clientes', icon: Users, url: '/clientes' },
     { title: 'Vendas', icon: Briefcase, url: '/vendas' },
     { title: 'Tarefas', icon: ListTodo, url: '/tarefas' },
     { title: 'Relatórios', icon: BarChart3, url: '/relatorios' },

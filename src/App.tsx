@@ -52,8 +52,8 @@ const App = () => (
           <Route element={<ProtectedRoute />}>
             <Route path="/alterar-senha-obrigatoria" element={<ChangePasswordMandatory />} />
             <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/clientes" element={<Index />} />
               <Route path="/customer/:id" element={<CustomerDetails />} />
               <Route path="/vendas" element={<SalesPipeline />} />
               <Route path="/tarefas" element={<TasksPage />} />

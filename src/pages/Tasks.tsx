@@ -35,6 +35,7 @@ import {
   endOfDay,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -108,9 +109,21 @@ export default function TasksPage() {
   const [newTaskStatus, setNewTaskStatus] = useState<Task['status']>('pending')
   const [newTaskCustomerId, setNewTaskCustomerId] = useState('')
 
+  const [searchParams] = useSearchParams()
+
   useEffect(() => {
     fetchData()
   }, [])
+
+  useEffect(() => {
+    const filter = searchParams.get('filter')
+    if (filter === 'overdue') {
+      setDateFilter('overdue')
+      setStatusFilter(['pending', 'in_progress'])
+    } else if (filter === 'pending') {
+      setStatusFilter(['pending'])
+    }
+  }, [searchParams])
 
   const fetchData = async () => {
     try {

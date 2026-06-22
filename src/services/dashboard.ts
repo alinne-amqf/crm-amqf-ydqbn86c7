@@ -1,139 +1,85 @@
 import { supabase } from '@/lib/supabase/client'
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
 export const dashboardService = {
-  async getMetrics(period: 'month' | 'prev_month' | 'all' = 'month') {
-    const now = new Date()
-    let startDate: string | undefined
-    let endDate: string | undefined
-    let prevStartDate: string | undefined
-    let prevEndDate: string | undefined
+  async getDashboardData() {
+    const [oppsRes, tasksRes, customersRes] = await Promise.all([
+      supabase.from('opportunities').select('id, stage, estimated_value'),
+      supabase.from('tasks').select('id, status, due_date'),
+      supabase.from('customers').select('id, status'),
+    ])
 
-    if (period === 'month') {
-      startDate = startOfMonth(now).toISOString()
-      endDate = endOfMonth(now).toISOString()
-      const prevMonth = subMonths(now, 1)
-      prevStartDate = startOfMonth(prevMonth).toISOString()
-      prevEndDate = endOfMonth(prevMonth).toISOString()
-    } else if (period === 'prev_month') {
-      const prevMonth = subMonths(now, 1)
-      startDate = startOfMonth(prevMonth).toISOString()
-      endDate = endOfMonth(prevMonth).toISOString()
-      const prevPrevMonth = subMonths(now, 2)
-      prevStartDate = startOfMonth(prevPrevMonth).toISOString()
-      prevEndDate = endOfMonth(prevPrevMonth).toISOString()
-    }
+    const opps = oppsRes.data || []
+    const tasks = tasksRes.data || []
+    const customers = customersRes.data || []
 
-    const buildQueries = (start?: string, end?: string) => {
-      let customersQuery = supabase.from('customers').select('id', { count: 'exact' })
-      let oppsQuery = supabase.from('opportunities').select('estimated_value, stage, created_at')
-      let tasksQuery = supabase
-        .from('tasks')
-        .select('id', { count: 'exact' })
-        .eq('status', 'pending')
+    let pipelineValue = 0
+    const stageCounts: Record<string, number> = {}
+    let won = 0
+    let lost = 0
 
-      if (start && end) {
-        customersQuery = customersQuery.gte('created_at', start).lte('created_at', end)
-        oppsQuery = oppsQuery.gte('created_at', start).lte('created_at', end)
-        tasksQuery = tasksQuery.gte('due_date', start).lte('due_date', end)
+    opps.forEach((o) => {
+      const stage = o.stage || 'Sem Etapa'
+      stageCounts[stage] = (stageCounts[stage] || 0) + 1
+
+      if (stage === 'Fechado/Ganho') {
+        won++
+      } else if (stage === 'Fechado/Perdido') {
+        lost++
+      } else {
+        pipelineValue += Number(o.estimated_value) || 0
       }
-      return [customersQuery, oppsQuery, tasksQuery] as const
-    }
+    })
 
-    const [[customersRes, oppsRes, tasksRes], [prevCustomersRes, prevOppsRes, prevTasksRes]] =
-      await Promise.all([
-        Promise.all(buildQueries(startDate, endDate)),
-        period !== 'all'
-          ? Promise.all(buildQueries(prevStartDate, prevEndDate))
-          : Promise.resolve([null, null, null]),
-      ])
+    const opportunitiesByStage = Object.entries(stageCounts).map(([stage, count]) => ({
+      stage,
+      count,
+      fill: 'hsl(var(--primary))',
+    }))
 
-    const calculateValues = (opportunities: any[]) => {
-      let pipeline = 0
-      let won = 0
-      const stages: Record<string, number> = {}
+    const conversionData = [
+      { name: 'Ganho', value: won, fill: '#10b981' },
+      { name: 'Perdido', value: lost, fill: '#ef4444' },
+    ]
 
-      opportunities.forEach((opp) => {
-        const value = Number(opp.estimated_value) || 0
-        const stage = (opp.stage || 'Sem Etapa').trim()
-        const stageLower = stage.toLowerCase()
+    const now = new Date()
+    let pendingCount = 0
+    let overdueCount = 0
 
-        if (
-          stageLower.includes('ganho') ||
-          stageLower === 'won' ||
-          stageLower === 'fechado ganho'
-        ) {
-          won += value
-        } else if (!stageLower.includes('perdid') && !stageLower.includes('lost')) {
-          pipeline += value
-          stages[stage] = (stages[stage] || 0) + value
+    tasks.forEach((t) => {
+      if (t.status !== 'completed') {
+        pendingCount++
+        if (new Date(t.due_date) < now) {
+          overdueCount++
         }
-      })
+      }
+    })
 
-      return { pipeline, won, stages }
+    const tasksSummary = { pending: pendingCount, overdue: overdueCount }
+
+    const statusCounts: Record<string, number> = {}
+    customers.forEach((c) => {
+      const status = c.status || 'Sem Status'
+      statusCounts[status] = (statusCounts[status] || 0) + 1
+    })
+
+    const statusColors: Record<string, string> = {
+      Ativo: '#10b981',
+      Lead: '#6366f1',
+      Inativo: '#94a3b8',
     }
 
-    const currentData = calculateValues(oppsRes.data || [])
-    const prevData =
-      period !== 'all' && prevOppsRes
-        ? calculateValues(prevOppsRes.data || [])
-        : { pipeline: 0, won: 0 }
-
-    const calculateGrowth = (current: number, prev: number) => {
-      if (period === 'all') return null
-      if (prev === 0) return current > 0 ? 100 : 0
-      return Math.round(((current - prev) / prev) * 100)
-    }
-
-    const funnelData = Object.keys(currentData.stages)
-      .map((stage) => ({
-        stage,
-        value: currentData.stages[stage],
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
+    const customersByStatus = Object.entries(statusCounts).map(([status, count]) => ({
+      status,
+      count,
+      fill: statusColors[status] || '#cbd5e1',
+    }))
 
     return {
-      totalCustomers: customersRes.count || 0,
-      customersGrowth: calculateGrowth(customersRes.count || 0, prevCustomersRes?.count || 0),
-      pipelineValue: currentData.pipeline,
-      pipelineGrowth: calculateGrowth(currentData.pipeline, prevData.pipeline),
-      wonValue: currentData.won,
-      wonGrowth: calculateGrowth(currentData.won, prevData.won),
-      pendingTasks: tasksRes.count || 0,
-      tasksGrowth: calculateGrowth(tasksRes.count || 0, prevTasksRes?.count || 0),
-      funnelData,
+      pipelineValue,
+      opportunitiesByStage,
+      conversionData,
+      tasksSummary,
+      customersByStatus,
     }
-  },
-
-  async getRecentOpportunities() {
-    const { data, error } = await supabase
-      .from('opportunities')
-      .select('id, title, estimated_value, stage, created_at, customers(name)')
-      .order('created_at', { ascending: false })
-      .limit(6)
-
-    if (error) {
-      console.error('Error fetching recent opportunities:', error)
-      return []
-    }
-
-    return data || []
-  },
-
-  async getUpcomingTasks() {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('id, title, due_date, type, customers(name)')
-      .eq('status', 'pending')
-      .order('due_date', { ascending: true })
-      .limit(4)
-
-    if (error) {
-      console.error('Error fetching upcoming tasks:', error)
-      return []
-    }
-
-    return data || []
   },
 }

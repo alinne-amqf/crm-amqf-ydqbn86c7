@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Plus,
   Search,
@@ -53,6 +53,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { CustomerForm } from '@/components/CustomerForm'
 import { Customer } from '@/lib/types'
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/customers'
@@ -60,8 +67,10 @@ import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all')
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
@@ -85,15 +94,26 @@ export default function Index() {
   }
 
   const filteredCustomers = useMemo(() => {
-    if (!searchQuery.trim()) return customers
+    let result = customers
+    if (statusFilter && statusFilter !== 'all') {
+      result = result.filter((c) => c.status === statusFilter)
+    }
+    if (!searchQuery.trim()) return result
     const query = searchQuery.toLowerCase()
-    return customers.filter(
+    return result.filter(
       (c) =>
         c.name.toLowerCase().includes(query) ||
         c.email.toLowerCase().includes(query) ||
         (c.company && c.company.toLowerCase().includes(query)),
     )
-  }, [customers, searchQuery])
+  }, [customers, searchQuery, statusFilter])
+
+  useEffect(() => {
+    const statusParam = searchParams.get('status')
+    if (statusParam) {
+      setStatusFilter(statusParam)
+    }
+  }, [searchParams])
 
   const handleSaveCustomer = async (customerData: Omit<Customer, 'id' | 'createdAt'>) => {
     try {
@@ -187,10 +207,17 @@ export default function Index() {
             className="pl-9 bg-background shadow-sm border-slate-200"
           />
         </div>
-        <Button variant="outline" className="shadow-sm bg-background">
-          <Filter className="mr-2 h-4 w-4" />
-          Filtrar
-        </Button>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px] bg-background">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="Ativo">Ativo</SelectItem>
+            <SelectItem value="Lead">Lead</SelectItem>
+            <SelectItem value="Inativo">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
