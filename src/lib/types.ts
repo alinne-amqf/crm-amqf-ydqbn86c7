@@ -51,4 +51,5 @@ export interface Opportunity {
   userId?: string
   stage: PipelineStage
   createdAt: string
+  lossReason?: string
 }

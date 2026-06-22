@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react'
-import { PipelineStage, Opportunity } from '@/lib/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PipelineStage } from '@/lib/types'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { opportunitiesService } from '@/services/opportunities'
 import { getCustomers } from '@/services/customers'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Plus, Loader2, CheckSquare } from 'lucide-react'
+import { Plus, Loader2, CheckSquare, AlertCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/hooks/use-auth'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
@@ -35,6 +38,15 @@ const STAGES: PipelineStage[] = [
   'Negociação',
   'Fechado/Ganho',
   'Fechado/Perdido',
+]
+
+const LOSS_REASONS = [
+  'Preço',
+  'Concorrência',
+  'Timing',
+  'Budget Insuficiente',
+  'Falta de Fit',
+  'Outro',
 ]
 
 export default function SalesPipeline() {
@@ -58,8 +70,19 @@ export default function SalesPipeline() {
     customerId: '',
     description: '',
     expectedCloseDate: '',
+    lossReason: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Loss Modal state
+  const [isLossModalOpen, setIsLossModalOpen] = useState(false)
+  const [pendingMove, setPendingMove] = useState<{
+    id: string
+    targetStage: PipelineStage
+    previousStage: PipelineStage
+  } | null>(null)
+  const [lossReason, setLossReason] = useState('')
+  const [isSubmittingLoss, setIsSubmittingLoss] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -100,21 +123,29 @@ export default function SalesPipeline() {
   const handleDrop = async (e: React.DragEvent, targetStage: PipelineStage) => {
     e.preventDefault()
     const id = e.dataTransfer.getData('opportunityId')
-    if (!id) return
+    if (!id || !user) return
 
     const opToMove = opportunities.find((op) => op.id === id)
     if (opToMove && opToMove.stage !== targetStage) {
+      if (targetStage === 'Fechado/Perdido') {
+        setPendingMove({ id, targetStage, previousStage: opToMove.stage })
+        setIsLossModalOpen(true)
+        return
+      }
+
       // Optimistic update
       setOpportunities((prev) =>
-        prev.map((op) => (op.id === id ? { ...op, stage: targetStage } : op)),
+        prev.map((op) => (op.id === id ? { ...op, stage: targetStage, lossReason: null } : op)),
       )
 
       try {
-        await opportunitiesService.updateStage(id, targetStage)
+        await opportunitiesService.updateStage(id, targetStage, null, user.id)
       } catch (error) {
         // Revert on error
         setOpportunities((prev) =>
-          prev.map((op) => (op.id === id ? { ...op, stage: opToMove.stage } : op)),
+          prev.map((op) =>
+            op.id === id ? { ...op, stage: opToMove.stage, lossReason: opToMove.lossReason } : op,
+          ),
         )
         toast({
           title: 'Erro',
@@ -122,6 +153,38 @@ export default function SalesPipeline() {
           variant: 'destructive',
         })
       }
+    }
+  }
+
+  const handleConfirmLoss = async () => {
+    if (!pendingMove || !user) return
+    setIsSubmittingLoss(true)
+
+    const { id, targetStage } = pendingMove
+
+    // Optimistic update
+    setOpportunities((prev) =>
+      prev.map((op) => (op.id === id ? { ...op, stage: targetStage, lossReason } : op)),
+    )
+
+    try {
+      await opportunitiesService.updateStage(id, targetStage, lossReason, user.id)
+      setIsLossModalOpen(false)
+      toast({ title: 'Sucesso', description: 'Oportunidade marcada como perdida.' })
+    } catch (error) {
+      // Revert on error
+      setOpportunities((prev) =>
+        prev.map((op) => (op.id === id ? { ...op, stage: pendingMove.previousStage } : op)),
+      )
+      toast({
+        title: 'Erro',
+        description: 'Falha ao atualizar o banco de dados.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmittingLoss(false)
+      setPendingMove(null)
+      setLossReason('')
     }
   }
 
@@ -134,6 +197,7 @@ export default function SalesPipeline() {
       customerId: '',
       description: '',
       expectedCloseDate: '',
+      lossReason: '',
     })
   }
 
@@ -151,6 +215,7 @@ export default function SalesPipeline() {
       customerId: op.customerId,
       description: op.description || '',
       expectedCloseDate: op.expectedCloseDate || '',
+      lossReason: op.lossReason || '',
     })
     setIsDialogOpen(true)
   }
@@ -174,6 +239,16 @@ export default function SalesPipeline() {
   const handleSaveOpportunity = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
+
+    if (formData.stage === 'Fechado/Perdido' && !formData.lossReason) {
+      toast({
+        title: 'Atenção',
+        description: 'Selecione o motivo da perda.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
     const numericValue = Number(formData.estimatedValue.replace(/\D/g, '')) / 100
@@ -185,11 +260,12 @@ export default function SalesPipeline() {
       customer_id: formData.customerId,
       description: formData.description || undefined,
       expected_close_date: formData.expectedCloseDate || null,
+      loss_reason: formData.stage === 'Fechado/Perdido' ? formData.lossReason : null,
     }
 
     try {
       if (editingId) {
-        await opportunitiesService.update(editingId, payload)
+        await opportunitiesService.update(editingId, payload, user.id)
         toast({ title: 'Sucesso', description: 'Oportunidade atualizada com sucesso.' })
       } else {
         await opportunitiesService.create({
@@ -246,11 +322,21 @@ export default function SalesPipeline() {
               <Plus className="mr-2 h-5 w-5" /> Nova Oportunidade
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Oportunidade' : 'Nova Oportunidade'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSaveOpportunity} className="space-y-4">
+            <form onSubmit={handleSaveOpportunity} className="space-y-4 py-2">
+              {editingId && formData.stage === 'Fechado/Perdido' && formData.lossReason && (
+                <div className="mb-2 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 flex flex-col space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-semibold text-sm">Oportunidade Perdida</span>
+                  </div>
+                  <span className="text-sm pl-7">Motivo: {formData.lossReason}</span>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="title">Título do Negócio</Label>
                 <Input
@@ -331,11 +417,15 @@ export default function SalesPipeline() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="stage">Estágio Inicial</Label>
+                <Label htmlFor="stage">Estágio</Label>
                 <Select
                   value={formData.stage}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, stage: value as PipelineStage })
+                    setFormData({
+                      ...formData,
+                      stage: value as PipelineStage,
+                      lossReason: value === 'Fechado/Perdido' ? formData.lossReason : '',
+                    })
                   }
                 >
                   <SelectTrigger>
@@ -351,6 +441,27 @@ export default function SalesPipeline() {
                 </Select>
               </div>
 
+              {formData.stage === 'Fechado/Perdido' && (
+                <div className="space-y-2 animate-fade-in-down">
+                  <Label htmlFor="lossReason">Motivo da Perda</Label>
+                  <Select
+                    value={formData.lossReason}
+                    onValueChange={(value) => setFormData({ ...formData, lossReason: value })}
+                  >
+                    <SelectTrigger className="border-red-200 focus:ring-red-500">
+                      <SelectValue placeholder="Selecione um motivo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LOSS_REASONS.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={isSubmitting || !formData.customerId}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -358,6 +469,53 @@ export default function SalesPipeline() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal Interceptador de Perda (Drag & Drop) */}
+        <Dialog
+          open={isLossModalOpen}
+          onOpenChange={(open) => {
+            setIsLossModalOpen(open)
+            if (!open) {
+              setPendingMove(null)
+              setLossReason('')
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Motivo da Perda</DialogTitle>
+              <DialogDescription>
+                Por favor, informe o motivo pelo qual esta oportunidade foi perdida para nos ajudar
+                a melhorar.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <RadioGroup value={lossReason} onValueChange={setLossReason} className="space-y-2">
+                {LOSS_REASONS.map((reason) => (
+                  <div key={reason} className="flex items-center space-x-2">
+                    <RadioGroupItem value={reason} id={`reason-${reason}`} />
+                    <Label htmlFor={`reason-${reason}`} className="font-normal cursor-pointer">
+                      {reason}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsLossModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmLoss}
+                disabled={!lossReason || isSubmittingLoss}
+              >
+                {isSubmittingLoss && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Confirmar
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
