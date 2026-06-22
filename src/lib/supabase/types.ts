@@ -171,6 +171,7 @@ export type Database = {
           estimated_value: number
           expected_close_date: string | null
           id: string
+          loss_reason: string | null
           stage: string
           title: string
           updated_at: string
@@ -183,6 +184,7 @@ export type Database = {
           estimated_value?: number
           expected_close_date?: string | null
           id?: string
+          loss_reason?: string | null
           stage: string
           title: string
           updated_at?: string
@@ -195,6 +197,7 @@ export type Database = {
           estimated_value?: number
           expected_close_date?: string | null
           id?: string
+          loss_reason?: string | null
           stage?: string
           title?: string
           updated_at?: string

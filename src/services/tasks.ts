@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase/client'
 
 export type TaskStatus = 'pending' | 'in_progress' | 'completed'
 export type TaskPriority = 'Alta' | 'Media' | 'Baixa'
-export type TaskType = 'call' | 'email' | 'meeting' | 'other'
+export type TaskType = 'call' | 'email' | 'meeting' | 'proposta' | 'follow-up' | 'other'
 
 export interface Task {
   id: string
@@ -63,7 +63,7 @@ export const getTasksByCustomer = async (customerId: string): Promise<Task[]> =>
   return data as any
 }
 
-export const createTask = async (task: Partial<Task>): Promise<Task> => {
+export const createTask = async (task: Partial<Task>, auditMessage?: string): Promise<Task> => {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('Not authenticated')
 
@@ -75,7 +75,7 @@ export const createTask = async (task: Partial<Task>): Promise<Task> => {
 
   if (error) throw error
 
-  await logAudit(`Criou a tarefa: ${task.title}`)
+  await logAudit(auditMessage || `Criou a tarefa: ${task.title}`)
   return data as any
 }
 

@@ -382,7 +382,17 @@ export default function TasksPage() {
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-medium">
               <span className="flex items-center text-slate-700">
                 <Badge variant="secondary" className="mr-2 uppercase text-[10px] rounded-sm">
-                  {task.type}
+                  {task.type === 'call'
+                    ? 'Ligação'
+                    : task.type === 'meeting'
+                      ? 'Reunião'
+                      : task.type === 'email'
+                        ? 'E-mail'
+                        : task.type === 'proposta'
+                          ? 'Proposta'
+                          : task.type === 'follow-up'
+                            ? 'Follow-up'
+                            : 'Outro'}
                 </Badge>
                 {task.customers?.name} {task.customers?.company && `(${task.customers.company})`}
               </span>
@@ -751,6 +761,8 @@ export default function TasksPage() {
                     <SelectItem value="call">Ligação</SelectItem>
                     <SelectItem value="email">E-mail</SelectItem>
                     <SelectItem value="meeting">Reunião</SelectItem>
+                    <SelectItem value="proposta">Proposta</SelectItem>
+                    <SelectItem value="follow-up">Follow-up</SelectItem>
                     <SelectItem value="other">Outro</SelectItem>
                   </SelectContent>
                 </Select>

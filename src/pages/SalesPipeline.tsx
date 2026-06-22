@@ -30,6 +30,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/hooks/use-auth'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { createTask, TaskType } from '@/services/tasks'
 
 const STAGES: PipelineStage[] = [
   'Prospecção',
@@ -84,6 +85,17 @@ export default function SalesPipeline() {
   const [lossReason, setLossReason] = useState('')
   const [isSubmittingLoss, setIsSubmittingLoss] = useState(false)
 
+  // Task Modal state
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
+  const [taskFormData, setTaskFormData] = useState({
+    title: '',
+    type: 'call' as TaskType,
+    description: '',
+    dueDate: '',
+    customerId: '',
+  })
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false)
+
   useEffect(() => {
     fetchData()
   }, [])
@@ -95,7 +107,7 @@ export default function SalesPipeline() {
           opportunitiesService.getAll(),
           getCustomers(),
           supabase.from('profiles').select('id, name'),
-          supabase.from('tasks').select('id, customer_id, status').eq('status', 'pending'),
+          supabase.from('tasks').select('id, customer_id, status').neq('status', 'completed'),
         ])
       setOpportunities(opsData)
       setCustomers(customersData)
@@ -305,7 +317,52 @@ export default function SalesPipeline() {
 
   const getPendingTasksCount = (op: any) => {
     const customerId = op.customerId || op.customer_id
-    return tasks.filter((t) => t.customer_id === customerId).length
+    return tasks.filter((t) => t.customer_id === customerId && t.status !== 'completed').length
+  }
+
+  const handleNewTaskClick = (op: any) => {
+    setTaskFormData({
+      title: '',
+      type: 'call',
+      description: '',
+      dueDate: '',
+      customerId: op.customerId || op.customer_id,
+    })
+    setIsTaskModalOpen(true)
+  }
+
+  const handleSaveTask = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+
+    setIsSubmittingTask(true)
+
+    try {
+      const newTask = await createTask(
+        {
+          title: taskFormData.title,
+          description: taskFormData.description || null,
+          type: taskFormData.type,
+          due_date: new Date(taskFormData.dueDate).toISOString(),
+          customer_id: taskFormData.customerId,
+          status: 'pending',
+          priority: 'Media',
+        },
+        'Criar Tarefa (via Kanban)',
+      )
+
+      setTasks((prev) => [...prev, newTask])
+      toast({ title: 'Sucesso', description: 'Tarefa criada com sucesso!' })
+      setIsTaskModalOpen(false)
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível criar a tarefa.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmittingTask(false)
+    }
   }
 
   return (
@@ -472,6 +529,85 @@ export default function SalesPipeline() {
           </DialogContent>
         </Dialog>
 
+        {/* Task Modal */}
+        <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nova Tarefa</DialogTitle>
+              <DialogDescription>Crie uma nova tarefa associada a este cliente.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSaveTask} className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="taskTitle">Título da tarefa *</Label>
+                <Input
+                  id="taskTitle"
+                  required
+                  value={taskFormData.title}
+                  onChange={(e) => setTaskFormData((prev) => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="taskType">Tipo de tarefa</Label>
+                  <Select
+                    value={taskFormData.type}
+                    onValueChange={(v: TaskType) =>
+                      setTaskFormData((prev) => ({ ...prev, type: v }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="call">Ligação</SelectItem>
+                      <SelectItem value="meeting">Reunião</SelectItem>
+                      <SelectItem value="proposta">Proposta</SelectItem>
+                      <SelectItem value="follow-up">Follow-up</SelectItem>
+                      <SelectItem value="other">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="taskDueDate">Vencimento *</Label>
+                  <Input
+                    id="taskDueDate"
+                    type="datetime-local"
+                    required
+                    value={taskFormData.dueDate}
+                    onChange={(e) =>
+                      setTaskFormData((prev) => ({ ...prev, dueDate: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="taskDesc">Descrição</Label>
+                <Textarea
+                  id="taskDesc"
+                  value={taskFormData.description}
+                  onChange={(e) =>
+                    setTaskFormData((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
+              <DialogFooter className="pt-2">
+                <Button variant="outline" type="button" onClick={() => setIsTaskModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingTask || !taskFormData.title || !taskFormData.dueDate}
+                >
+                  {isSubmittingTask && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         {/* Modal Interceptador de Perda (Drag & Drop) */}
         <Dialog
           open={isLossModalOpen}
@@ -596,15 +732,28 @@ export default function SalesPipeline() {
                               {formatCurrency(op.estimatedValue)}
                             </div>
 
-                            {pendingCount > 0 && (
-                              <div
-                                className="flex items-center text-warning font-medium text-[11px]"
-                                title={`${pendingCount} tarefa(s) pendente(s)`}
+                            <div className="flex items-center gap-2">
+                              {pendingCount > 0 && (
+                                <div
+                                  className="flex items-center text-warning font-medium text-[11px]"
+                                  title={`${pendingCount} tarefa(s) pendente(s)`}
+                                >
+                                  <CheckSquare className="h-3 w-3 mr-1" />
+                                  {pendingCount}
+                                </div>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-[10px] px-2 py-0 border-primary/20 text-primary hover:bg-primary hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleNewTaskClick(op)
+                                }}
                               >
-                                <CheckSquare className="h-3 w-3 mr-1" />
-                                {pendingCount}
-                              </div>
-                            )}
+                                <Plus className="h-3 w-3 mr-1" /> Tarefa
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
