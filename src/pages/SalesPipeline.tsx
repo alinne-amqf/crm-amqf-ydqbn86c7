@@ -31,6 +31,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useAuth } from '@/hooks/use-auth'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { createTask, TaskType } from '@/services/tasks'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { format } from 'date-fns'
 
 const STAGES: PipelineStage[] = [
   'Prospecção',
@@ -68,6 +70,8 @@ export default function SalesPipeline() {
     title: '',
     estimatedValue: '',
     stage: 'Prospecção' as PipelineStage,
+    originalStage: 'Prospecção' as PipelineStage,
+    stageNotes: '',
     customerId: '',
     description: '',
     expectedCloseDate: '',
@@ -75,15 +79,20 @@ export default function SalesPipeline() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Loss Modal state
-  const [isLossModalOpen, setIsLossModalOpen] = useState(false)
+  // History timeline state
+  const [history, setHistory] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
+  // Stage Modal state
+  const [isStageModalOpen, setIsStageModalOpen] = useState(false)
   const [pendingMove, setPendingMove] = useState<{
     id: string
     targetStage: PipelineStage
     previousStage: PipelineStage
   } | null>(null)
+  const [stageNotes, setStageNotes] = useState('')
   const [lossReason, setLossReason] = useState('')
-  const [isSubmittingLoss, setIsSubmittingLoss] = useState(false)
+  const [isSubmittingStage, setIsSubmittingStage] = useState(false)
 
   // Task Modal state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
@@ -139,40 +148,26 @@ export default function SalesPipeline() {
 
     const opToMove = opportunities.find((op) => op.id === id)
     if (opToMove && opToMove.stage !== targetStage) {
-      if (targetStage === 'Fechado/Perdido') {
-        setPendingMove({ id, targetStage, previousStage: opToMove.stage })
-        setIsLossModalOpen(true)
-        return
-      }
-
-      // Optimistic update
-      setOpportunities((prev) =>
-        prev.map((op) => (op.id === id ? { ...op, stage: targetStage, lossReason: null } : op)),
-      )
-
-      try {
-        await opportunitiesService.updateStage(id, targetStage, null, user.id)
-      } catch (error) {
-        // Revert on error
-        setOpportunities((prev) =>
-          prev.map((op) =>
-            op.id === id ? { ...op, stage: opToMove.stage, lossReason: opToMove.lossReason } : op,
-          ),
-        )
-        toast({
-          title: 'Erro',
-          description: 'Falha ao atualizar o estágio no banco de dados.',
-          variant: 'destructive',
-        })
-      }
+      setPendingMove({ id, targetStage, previousStage: opToMove.stage })
+      setIsStageModalOpen(true)
     }
   }
 
-  const handleConfirmLoss = async () => {
+  const handleConfirmStageChange = async () => {
     if (!pendingMove || !user) return
-    setIsSubmittingLoss(true)
+    setIsSubmittingStage(true)
 
-    const { id, targetStage } = pendingMove
+    const { id, targetStage, previousStage } = pendingMove
+
+    if (targetStage === 'Fechado/Perdido' && !lossReason) {
+      toast({
+        title: 'Atenção',
+        description: 'Selecione o motivo da perda.',
+        variant: 'destructive',
+      })
+      setIsSubmittingStage(false)
+      return
+    }
 
     // Optimistic update
     setOpportunities((prev) =>
@@ -180,9 +175,16 @@ export default function SalesPipeline() {
     )
 
     try {
-      await opportunitiesService.updateStage(id, targetStage, lossReason, user.id)
-      setIsLossModalOpen(false)
-      toast({ title: 'Sucesso', description: 'Oportunidade marcada como perdida.' })
+      await opportunitiesService.updateStage(
+        id,
+        targetStage,
+        previousStage,
+        targetStage === 'Fechado/Perdido' ? lossReason : null,
+        stageNotes,
+        user.id,
+      )
+      setIsStageModalOpen(false)
+      toast({ title: 'Sucesso', description: 'Estágio atualizado com sucesso.' })
     } catch (error) {
       // Revert on error
       setOpportunities((prev) =>
@@ -194,9 +196,10 @@ export default function SalesPipeline() {
         variant: 'destructive',
       })
     } finally {
-      setIsSubmittingLoss(false)
+      setIsSubmittingStage(false)
       setPendingMove(null)
       setLossReason('')
+      setStageNotes('')
     }
   }
 
@@ -206,14 +209,17 @@ export default function SalesPipeline() {
       title: '',
       estimatedValue: '',
       stage: 'Prospecção',
+      originalStage: 'Prospecção',
+      stageNotes: '',
       customerId: '',
       description: '',
       expectedCloseDate: '',
       lossReason: '',
     })
+    setHistory([])
   }
 
-  const handleEdit = (op: any) => {
+  const handleEdit = async (op: any) => {
     setEditingId(op.id)
     setFormData({
       title: op.title,
@@ -224,12 +230,24 @@ export default function SalesPipeline() {
           }).format(op.estimatedValue)
         : '',
       stage: op.stage,
-      customerId: op.customerId,
+      originalStage: op.stage,
+      stageNotes: '',
+      customerId: op.customerId || op.customer_id,
       description: op.description || '',
       expectedCloseDate: op.expectedCloseDate || '',
       lossReason: op.lossReason || '',
     })
     setIsDialogOpen(true)
+    setLoadingHistory(true)
+
+    try {
+      const hist = await opportunitiesService.getHistory(op.id)
+      setHistory(hist)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingHistory(false)
+    }
   }
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,7 +295,13 @@ export default function SalesPipeline() {
 
     try {
       if (editingId) {
-        await opportunitiesService.update(editingId, payload, user.id)
+        await opportunitiesService.update(
+          editingId,
+          payload,
+          user.id,
+          formData.originalStage,
+          formData.stageNotes,
+        )
         toast({ title: 'Sucesso', description: 'Oportunidade atualizada com sucesso.' })
       } else {
         await opportunitiesService.create({
@@ -365,6 +389,217 @@ export default function SalesPipeline() {
     }
   }
 
+  const renderForm = () => (
+    <form onSubmit={handleSaveOpportunity} className="space-y-4 py-2">
+      {editingId && formData.stage === 'Fechado/Perdido' && formData.lossReason && (
+        <div className="mb-2 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 flex flex-col space-y-1">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <span className="font-semibold text-sm">Oportunidade Perdida</span>
+          </div>
+          <span className="text-sm pl-7">Motivo: {formData.lossReason}</span>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="title">Título do Negócio</Label>
+        <Input
+          id="title"
+          required
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="customer">Cliente</Label>
+        <Select
+          value={formData.customerId}
+          onValueChange={(value) => setFormData({ ...formData, customerId: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione um cliente" />
+          </SelectTrigger>
+          <SelectContent>
+            {customers.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {customers.find((c) => c.id === formData.customerId)?.customerType === 'B2B' && (
+        <div className="space-y-2 animate-fade-in-down">
+          <Label htmlFor="company">Empresa</Label>
+          <Input
+            id="company"
+            readOnly
+            value={customers.find((c) => c.id === formData.customerId)?.company || ''}
+            className="bg-muted cursor-not-allowed"
+            tabIndex={-1}
+          />
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Descrição</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Detalhes adicionais sobre a oportunidade..."
+          className="resize-none"
+          rows={2}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="value">Valor Estimado</Label>
+          <Input
+            id="value"
+            type="text"
+            required
+            placeholder="R$ 0,00"
+            value={formData.estimatedValue}
+            onChange={handleCurrencyChange}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="expectedCloseDate">Data de Fechamento</Label>
+          <Input
+            id="expectedCloseDate"
+            type="date"
+            value={formData.expectedCloseDate}
+            onChange={(e) => setFormData({ ...formData, expectedCloseDate: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="stage">Estágio</Label>
+        <Select
+          value={formData.stage}
+          onValueChange={(value) =>
+            setFormData({
+              ...formData,
+              stage: value as PipelineStage,
+              lossReason: value === 'Fechado/Perdido' ? formData.lossReason : '',
+            })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STAGES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {editingId && formData.stage !== formData.originalStage && (
+        <div className="space-y-2 animate-fade-in-down border rounded-md p-4 bg-muted/50">
+          <Label htmlFor="stageNotes">Observações sobre a mudança de estágio (opcional)</Label>
+          <Textarea
+            id="stageNotes"
+            value={formData.stageNotes}
+            onChange={(e) => setFormData({ ...formData, stageNotes: e.target.value })}
+            placeholder="Adicione um contexto para esta mudança..."
+            className="resize-none"
+            rows={2}
+          />
+        </div>
+      )}
+
+      {formData.stage === 'Fechado/Perdido' && (
+        <div className="space-y-2 animate-fade-in-down">
+          <Label htmlFor="lossReason">Motivo da Perda</Label>
+          <Select
+            value={formData.lossReason}
+            onValueChange={(value) => setFormData({ ...formData, lossReason: value })}
+          >
+            <SelectTrigger className="border-red-200 focus:ring-red-500">
+              <SelectValue placeholder="Selecione um motivo" />
+            </SelectTrigger>
+            <SelectContent>
+              {LOSS_REASONS.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="flex justify-end pt-4">
+        <Button type="submit" disabled={isSubmitting || !formData.customerId}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Salvar
+        </Button>
+      </div>
+    </form>
+  )
+
+  const renderHistory = () => (
+    <div className="space-y-4 pt-2">
+      {loadingHistory ? (
+        <div className="flex justify-center p-8">
+          <Loader2 className="animate-spin h-6 w-6 text-primary" />
+        </div>
+      ) : history.length === 0 ? (
+        <div className="text-center p-8 text-muted-foreground border-2 border-dashed border-border rounded-md">
+          Nenhum histórico de estágios encontrado.
+        </div>
+      ) : (
+        <div className="relative border-l-2 border-border/50 ml-3 space-y-8 pb-4 mt-4">
+          {history.map((item, idx) => (
+            <div
+              key={item.id}
+              className="relative pl-6 animate-fade-in-up"
+              style={{ animationDelay: `${idx * 100}ms` }}
+            >
+              <div
+                className={`absolute -left-[7px] top-1 h-3 w-3 rounded-full border-2 z-10 ${idx === 0 ? 'border-primary bg-primary ring-4 ring-primary/20' : 'border-muted-foreground bg-background'}`}
+              />
+              <div className="flex flex-col space-y-1 -mt-1 bg-white p-3 rounded-lg border border-border shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`text-[13px] font-semibold ${idx === 0 ? 'text-foreground' : 'text-muted-foreground'}`}
+                  >
+                    De <span className="text-foreground/80 font-medium">{item.previousStage}</span>{' '}
+                    para{' '}
+                    <span className={idx === 0 ? 'text-primary' : 'text-foreground/80'}>
+                      {item.newStage}
+                    </span>
+                  </span>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {format(new Date(item.createdAt), 'dd/MM/yyyy HH:mm')}
+                  </span>
+                </div>
+                <div className="text-[12px] text-muted-foreground">
+                  Modificado por{' '}
+                  <span className="font-medium text-foreground/80">{item.userName}</span>
+                </div>
+                {item.notes && (
+                  <div className="mt-2 text-[13px] bg-slate-50 p-2.5 rounded border border-slate-100 text-slate-700 italic">
+                    "{item.notes}"
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="flex h-full min-h-[calc(100vh-4rem)] flex-col space-y-4 p-8 pt-6 bg-slate-50">
       <div className="flex items-center justify-between space-y-2">
@@ -379,153 +614,24 @@ export default function SalesPipeline() {
               <Plus className="mr-2 h-5 w-5" /> Nova Oportunidade
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Editar Oportunidade' : 'Nova Oportunidade'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSaveOpportunity} className="space-y-4 py-2">
-              {editingId && formData.stage === 'Fechado/Perdido' && formData.lossReason && (
-                <div className="mb-2 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 flex flex-col space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                    <span className="font-semibold text-sm">Oportunidade Perdida</span>
-                  </div>
-                  <span className="text-sm pl-7">Motivo: {formData.lossReason}</span>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="title">Título do Negócio</Label>
-                <Input
-                  id="title"
-                  required
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customer">Cliente</Label>
-                <Select
-                  value={formData.customerId}
-                  onValueChange={(value) => setFormData({ ...formData, customerId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {customers.find((c) => c.id === formData.customerId)?.customerType === 'B2B' && (
-                <div className="space-y-2 animate-fade-in-down">
-                  <Label htmlFor="company">Empresa</Label>
-                  <Input
-                    id="company"
-                    readOnly
-                    value={customers.find((c) => c.id === formData.customerId)?.company || ''}
-                    className="bg-muted cursor-not-allowed"
-                    tabIndex={-1}
-                  />
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Detalhes adicionais sobre a oportunidade..."
-                  className="resize-none"
-                  rows={2}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="value">Valor Estimado</Label>
-                  <Input
-                    id="value"
-                    type="text"
-                    required
-                    placeholder="R$ 0,00"
-                    value={formData.estimatedValue}
-                    onChange={handleCurrencyChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expectedCloseDate">Data de Fechamento</Label>
-                  <Input
-                    id="expectedCloseDate"
-                    type="date"
-                    value={formData.expectedCloseDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, expectedCloseDate: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="stage">Estágio</Label>
-                <Select
-                  value={formData.stage}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      stage: value as PipelineStage,
-                      lossReason: value === 'Fechado/Perdido' ? formData.lossReason : '',
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STAGES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.stage === 'Fechado/Perdido' && (
-                <div className="space-y-2 animate-fade-in-down">
-                  <Label htmlFor="lossReason">Motivo da Perda</Label>
-                  <Select
-                    value={formData.lossReason}
-                    onValueChange={(value) => setFormData({ ...formData, lossReason: value })}
-                  >
-                    <SelectTrigger className="border-red-200 focus:ring-red-500">
-                      <SelectValue placeholder="Selecione um motivo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LOSS_REASONS.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {r}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmitting || !formData.customerId}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Salvar
-                </Button>
-              </div>
-            </form>
+            {editingId ? (
+              <Tabs defaultValue="details" className="w-full mt-2">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="details">Detalhes</TabsTrigger>
+                  <TabsTrigger value="history">Histórico de Estágios</TabsTrigger>
+                </TabsList>
+                <TabsContent value="details">{renderForm()}</TabsContent>
+                <TabsContent value="history" className="min-h-[300px]">
+                  {renderHistory()}
+                </TabsContent>
+              </Tabs>
+            ) : (
+              renderForm()
+            )}
           </DialogContent>
         </Dialog>
 
@@ -608,47 +714,79 @@ export default function SalesPipeline() {
           </DialogContent>
         </Dialog>
 
-        {/* Modal Interceptador de Perda (Drag & Drop) */}
+        {/* Modal Interceptador de Mudança de Estágio (Drag & Drop) */}
         <Dialog
-          open={isLossModalOpen}
+          open={isStageModalOpen}
           onOpenChange={(open) => {
-            setIsLossModalOpen(open)
+            setIsStageModalOpen(open)
             if (!open) {
               setPendingMove(null)
               setLossReason('')
+              setStageNotes('')
             }
           }}
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Motivo da Perda</DialogTitle>
+              <DialogTitle>Mudar Estágio</DialogTitle>
               <DialogDescription>
-                Por favor, informe o motivo pelo qual esta oportunidade foi perdida para nos ajudar
-                a melhorar.
+                Confirmando a mudança de{' '}
+                <span className="font-semibold text-foreground">{pendingMove?.previousStage}</span>{' '}
+                para <span className="font-semibold text-primary">{pendingMove?.targetStage}</span>
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <RadioGroup value={lossReason} onValueChange={setLossReason} className="space-y-2">
-                {LOSS_REASONS.map((reason) => (
-                  <div key={reason} className="flex items-center space-x-2">
-                    <RadioGroupItem value={reason} id={`reason-${reason}`} />
-                    <Label htmlFor={`reason-${reason}`} className="font-normal cursor-pointer">
-                      {reason}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+              {pendingMove?.targetStage === 'Fechado/Perdido' && (
+                <div className="space-y-2 animate-fade-in-down border p-3 rounded-md bg-red-50 border-red-100">
+                  <Label className="text-red-700 font-semibold">Motivo da Perda *</Label>
+                  <RadioGroup
+                    value={lossReason}
+                    onValueChange={setLossReason}
+                    className="space-y-2 mt-2"
+                  >
+                    {LOSS_REASONS.map((reason) => (
+                      <div key={reason} className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value={reason}
+                          id={`reason-${reason}`}
+                          className="border-red-400 text-red-600 focus:ring-red-500"
+                        />
+                        <Label
+                          htmlFor={`reason-${reason}`}
+                          className="font-normal cursor-pointer text-red-800"
+                        >
+                          {reason}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="stageModalNotes">Observações (opcional)</Label>
+                <Textarea
+                  id="stageModalNotes"
+                  value={stageNotes}
+                  onChange={(e) => setStageNotes(e.target.value)}
+                  placeholder="Adicione um contexto para esta mudança..."
+                  className="resize-none"
+                  rows={3}
+                />
+              </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsLossModalOpen(false)}>
+              <Button variant="outline" onClick={() => setIsStageModalOpen(false)}>
                 Cancelar
               </Button>
               <Button
-                variant="destructive"
-                onClick={handleConfirmLoss}
-                disabled={!lossReason || isSubmittingLoss}
+                variant={pendingMove?.targetStage === 'Fechado/Perdido' ? 'destructive' : 'default'}
+                onClick={handleConfirmStageChange}
+                disabled={
+                  isSubmittingStage ||
+                  (pendingMove?.targetStage === 'Fechado/Perdido' && !lossReason)
+                }
               >
-                {isSubmittingLoss && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmittingStage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Confirmar
               </Button>
             </DialogFooter>

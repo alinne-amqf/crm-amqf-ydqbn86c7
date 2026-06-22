@@ -37,6 +37,8 @@ export const opportunitiesService = {
       loss_reason?: string | null
     }>,
     userId?: string,
+    previousStage?: PipelineStage,
+    notes?: string | null,
   ) {
     const { error } = await supabase
       .from('opportunities' as any)
@@ -44,6 +46,18 @@ export const opportunitiesService = {
       .eq('id', id)
 
     if (error) throw error
+
+    if (data.stage && previousStage && data.stage !== previousStage && userId) {
+      await supabase.from('opportunity_stage_history' as any).insert([
+        {
+          opportunity_id: id,
+          previous_stage: previousStage,
+          new_stage: data.stage,
+          user_id: userId,
+          notes: notes || null,
+        },
+      ])
+    }
 
     if (data.stage === 'Fechado/Perdido' && data.loss_reason && userId) {
       await supabase.from('audit_logs').insert([
@@ -56,7 +70,14 @@ export const opportunitiesService = {
     }
   },
 
-  async updateStage(id: string, stage: PipelineStage, lossReason?: string | null, userId?: string) {
+  async updateStage(
+    id: string,
+    stage: PipelineStage,
+    previousStage: PipelineStage,
+    lossReason?: string | null,
+    notes?: string | null,
+    userId?: string,
+  ) {
     const updateData: any = { stage, updated_at: new Date().toISOString() }
     if (stage === 'Fechado/Perdido' && lossReason) {
       updateData.loss_reason = lossReason
@@ -71,6 +92,18 @@ export const opportunitiesService = {
 
     if (error) throw error
 
+    if (userId) {
+      await supabase.from('opportunity_stage_history' as any).insert([
+        {
+          opportunity_id: id,
+          previous_stage: previousStage,
+          new_stage: stage,
+          user_id: userId,
+          notes: notes || null,
+        },
+      ])
+    }
+
     if (stage === 'Fechado/Perdido' && lossReason && userId) {
       await supabase.from('audit_logs').insert([
         {
@@ -80,6 +113,27 @@ export const opportunitiesService = {
         },
       ])
     }
+  },
+
+  async getHistory(opportunityId: string) {
+    const { data, error } = await supabase
+      .from('opportunity_stage_history' as any)
+      .select('*, user:profiles(name)')
+      .eq('opportunity_id', opportunityId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      opportunityId: item.opportunity_id,
+      previousStage: item.previous_stage,
+      newStage: item.new_stage,
+      userId: item.user_id,
+      userName: item.user?.name || 'Sistema',
+      createdAt: item.created_at,
+      notes: item.notes,
+    }))
   },
 
   async create(data: {
