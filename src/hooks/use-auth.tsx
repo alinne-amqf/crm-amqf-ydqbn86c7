@@ -40,21 +40,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(true)
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setAuthLoading(false)
-    })
+    const cleanCorruptedSession = () => {
+      try {
+        Object.keys(localStorage).forEach((key) => {
+          if (key.includes('auth-token')) {
+            const raw = localStorage.getItem(key)
+            if (!raw) return
+            const parsed = JSON.parse(raw)
+            if (!parsed?.access_token || typeof parsed.access_token !== 'string') {
+              localStorage.removeItem(key)
+            }
+          }
+        })
+      } catch {
+        // ignore cleanup errors
+      }
+    }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setAuthLoading(false)
-    })
+    cleanCorruptedSession()
 
-    return () => subscription.unsubscribe()
+    let subscription: { unsubscribe: () => void } | null = null
+
+    try {
+      const {
+        data: { subscription: sub },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setAuthLoading(false)
+      })
+      subscription = sub
+    } catch (err) {
+      console.error('[useAuth] Error setting up auth listener:', err)
+      setAuthLoading(false)
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setAuthLoading(false)
+      })
+      .catch((err) => {
+        console.error('[useAuth] Error getting session:', err)
+        cleanCorruptedSession()
+        setSession(null)
+        setUser(null)
+        setAuthLoading(false)
+      })
+
+    return () => {
+      subscription?.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {

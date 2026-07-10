@@ -38,9 +38,8 @@ export default function Login() {
       if (mode === 'login') {
         const { error } = await signIn(email, password)
         if (error) {
-          const isInvalidCredentials = error.message
-            .toLowerCase()
-            .includes('invalid login credentials')
+          const isInvalidCredentials =
+            error.message?.toLowerCase().includes('invalid login credentials') ?? false
           toast.error('Erro ao fazer login', {
             description: isInvalidCredentials
               ? 'Credenciais inválidas. Verifique seu e-mail e senha.'
