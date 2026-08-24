@@ -1,9 +1,9 @@
 {
   "_versions": {
-    "invite-user": 13,
-    "resend_invite": 14,
+    "invite-user": 14,
+    "resend_invite": 15,
     "generate_temporary_password": 2,
-    "change_password_first_login": 9,
-    "update-opportunity-stage": 2
+    "change_password_first_login": 10,
+    "update-opportunity-stage": 3
   }
 }
