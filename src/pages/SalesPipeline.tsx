@@ -201,14 +201,14 @@ export default function SalesPipeline() {
       )
       setIsStageModalOpen(false)
       toast({ title: 'Sucesso', description: 'Estágio atualizado com sucesso.' })
-    } catch (error) {
+    } catch (error: any) {
       // Revert on error
       setOpportunities((prev) =>
         prev.map((op) => (op.id === id ? { ...op, stage: pendingMove.previousStage } : op)),
       )
       toast({
         title: 'Erro',
-        description: 'Falha ao atualizar o banco de dados.',
+        description: error?.message || 'Falha ao atualizar o estágio da oportunidade.',
         variant: 'destructive',
       })
     } finally {

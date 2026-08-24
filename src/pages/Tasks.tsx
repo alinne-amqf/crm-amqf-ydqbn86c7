@@ -134,7 +134,19 @@ export default function TasksPage() {
       ])
       setTasks(tasksData)
       if (customersData.data) {
-        setCustomers(customersData.data as Customer[])
+        setCustomers(
+          customersData.data.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            email: c.email,
+            phone: c.phone,
+            company: c.company,
+            status: c.status,
+            customerType: c.customer_type || 'B2C',
+            document: c.document,
+            createdAt: c.created_at,
+          })) as Customer[],
+        )
       }
     } catch (error: any) {
       toast.error('Erro ao carregar dados', { description: error.message })

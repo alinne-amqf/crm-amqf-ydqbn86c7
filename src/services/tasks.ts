@@ -69,7 +69,7 @@ export const createTask = async (task: Partial<Task>, auditMessage?: string): Pr
 
   const { data, error } = await supabase
     .from('tasks')
-    .insert([{ ...task, user_id: userData.user.id }])
+    .insert([{ ...(task as any), user_id: userData.user.id }])
     .select()
     .single()
 

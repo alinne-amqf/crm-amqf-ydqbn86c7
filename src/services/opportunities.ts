@@ -73,46 +73,47 @@ export const opportunitiesService = {
   async updateStage(
     id: string,
     stage: PipelineStage,
-    previousStage: PipelineStage,
+    previousStage?: PipelineStage,
     lossReason?: string | null,
     notes?: string | null,
-    userId?: string,
+    _userId?: string,
   ) {
-    const updateData: any = { stage, updated_at: new Date().toISOString() }
-    if (stage === 'Fechado/Perdido' && lossReason) {
-      updateData.loss_reason = lossReason
-    } else if (stage !== 'Fechado/Perdido') {
-      updateData.loss_reason = null
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    const token = session?.access_token
+    if (!token) {
+      throw new Error('Sessão expirada ou usuário não autenticado.')
     }
 
-    const { error } = await supabase
-      .from('opportunities' as any)
-      .update(updateData)
-      .eq('id', id)
-
-    if (error) throw error
-
-    if (userId) {
-      await supabase.from('opportunity_stage_history' as any).insert([
-        {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL || 'https://eozovkvzulvytxypyqpe.supabase.co'}/functions/v1/update-opportunity-stage`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+        },
+        body: JSON.stringify({
           opportunity_id: id,
-          previous_stage: previousStage,
           new_stage: stage,
-          user_id: userId,
-          notes: notes || null,
-        },
-      ])
+          notes: notes || undefined,
+          loss_reason: stage === 'Fechado/Perdido' ? lossReason || undefined : undefined,
+        }),
+      },
+    )
+
+    const result = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      const errorMessage =
+        result?.error || `Erro ao atualizar estágio da oportunidade (${response.status})`
+      throw new Error(errorMessage)
     }
 
-    if (stage === 'Fechado/Perdido' && lossReason && userId) {
-      await supabase.from('audit_logs').insert([
-        {
-          user_id: userId,
-          action: `Oportunidade movida para Perdida. Motivo: ${lossReason}`,
-          status: 'success',
-        },
-      ])
-    }
+    return result
   },
 
   async getHistory(opportunityId: string) {

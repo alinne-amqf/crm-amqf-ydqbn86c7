@@ -13,13 +13,20 @@ export const getInteractionsByCustomer = async (customerId: string) => {
   return data.map((d: any) => ({
     id: d.id,
     customerId: d.customer_id,
+    userId: d.user_id,
     type: d.type,
     date: d.date,
     description: d.description,
+    createdAt: d.created_at,
   })) as Interaction[]
 }
 
-export const createInteraction = async (interaction: Omit<Interaction, 'id'>) => {
+export const createInteraction = async (
+  interaction: Omit<Interaction, 'id' | 'createdAt' | 'userId'> & {
+    userId?: string
+    createdAt?: string
+  },
+) => {
   const { data: userData } = await supabase.auth.getUser()
   if (!userData.user) throw new Error('User not authenticated')
 
@@ -42,8 +49,10 @@ export const createInteraction = async (interaction: Omit<Interaction, 'id'>) =>
   return {
     id: data.id,
     customerId: data.customer_id,
+    userId: data.user_id,
     type: data.type,
     date: data.date,
     description: data.description,
+    createdAt: data.created_at,
   } as Interaction
 }

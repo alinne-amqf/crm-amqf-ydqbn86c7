@@ -32,7 +32,10 @@ export const getProfiles = async () => {
 }
 
 export const updateProfileRole = async (id: string, role: UserRole, targetName: string) => {
-  const { error } = await supabase.from('profiles').update({ role }).eq('id', id)
+  const { error } = await supabase
+    .from('profiles')
+    .update({ role: role as any })
+    .eq('id', id)
   if (error) throw error
 
   const {
