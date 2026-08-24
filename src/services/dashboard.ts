@@ -43,18 +43,27 @@ export const dashboardService = {
 
     const now = new Date()
     let pendingCount = 0
+    let inProgressCount = 0
     let overdueCount = 0
 
     tasks.forEach((t) => {
-      if (t.status !== 'completed') {
+      if (t.status === 'pending') {
         pendingCount++
-        if (new Date(t.due_date) < now) {
-          overdueCount++
-        }
+      } else if (t.status === 'in_progress') {
+        inProgressCount++
+      }
+
+      // Overdue: tasks not completed whose due_date is in the past
+      if (t.status !== 'completed' && t.due_date && new Date(t.due_date) < now) {
+        overdueCount++
       }
     })
 
-    const tasksSummary = { pending: pendingCount, overdue: overdueCount }
+    const tasksSummary = {
+      pending: pendingCount,
+      inProgress: inProgressCount,
+      overdue: overdueCount,
+    }
 
     const statusCounts: Record<string, number> = {}
     customers.forEach((c) => {

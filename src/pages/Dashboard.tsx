@@ -22,7 +22,7 @@ interface DashboardData {
   pipelineValue: number
   opportunitiesByStage: Array<{ stage: string; count: number; fill: string }>
   conversionData: Array<{ name: string; value: number; fill: string }>
-  tasksSummary: { pending: number; overdue: number }
+  tasksSummary: { pending: number; inProgress: number; overdue: number }
   customersByStatus: Array<{ status: string; count: number; fill: string }>
 }
 
@@ -111,24 +111,60 @@ export default function Dashboard() {
               Resumo de Tarefas
             </h3>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <div
-              className="flex flex-col items-center justify-center p-3 rounded-lg bg-orange-50 cursor-pointer hover:bg-orange-100 transition-colors"
-              onClick={() => navigate('/tarefas?filter=pending')}
+              role="button"
+              tabIndex={0}
+              aria-label="Tarefas a fazer"
+              className="flex flex-col items-center justify-center p-3 rounded-lg bg-amber-50 border border-amber-200/60 cursor-pointer hover:bg-amber-100/80 transition-all hover:scale-[1.02] shadow-xs select-none"
+              onClick={() => navigate('/tarefas?status=pending')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate('/tarefas?status=pending')
+                }
+              }}
             >
-              <span className="text-2xl font-bold text-orange-600">
-                {data?.tasksSummary.pending || 0}
+              <span className="text-2xl font-bold text-amber-600">
+                {data?.tasksSummary?.pending ?? 0}
               </span>
-              <span className="text-xs text-orange-800 font-medium">Pendentes</span>
+              <span className="text-xs text-amber-800 font-medium text-center">A fazer</span>
             </div>
             <div
-              className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-50 cursor-pointer hover:bg-red-100 transition-colors"
+              role="button"
+              tabIndex={0}
+              aria-label="Tarefas em andamento"
+              className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-50 border border-blue-200/60 cursor-pointer hover:bg-blue-100/80 transition-all hover:scale-[1.02] shadow-xs select-none"
+              onClick={() => navigate('/tarefas?status=in_progress')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate('/tarefas?status=in_progress')
+                }
+              }}
+            >
+              <span className="text-2xl font-bold text-blue-600">
+                {data?.tasksSummary?.inProgress ?? 0}
+              </span>
+              <span className="text-xs text-blue-800 font-medium text-center">Em andamento</span>
+            </div>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="Tarefas atrasadas"
+              className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-50 border border-red-200/60 cursor-pointer hover:bg-red-100/80 transition-all hover:scale-[1.02] shadow-xs select-none"
               onClick={() => navigate('/tarefas?filter=overdue')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate('/tarefas?filter=overdue')
+                }
+              }}
             >
               <span className="text-2xl font-bold text-red-600">
-                {data?.tasksSummary.overdue || 0}
+                {data?.tasksSummary?.overdue ?? 0}
               </span>
-              <span className="text-xs text-red-800 font-medium">Atrasadas</span>
+              <span className="text-xs text-red-800 font-medium text-center">Atrasadas</span>
             </div>
           </div>
         </Card>

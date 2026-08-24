@@ -117,11 +117,24 @@ export default function TasksPage() {
 
   useEffect(() => {
     const filter = searchParams.get('filter')
+    const status = searchParams.get('status')
+
     if (filter === 'overdue') {
       setDateFilter('overdue')
       setStatusFilter(['pending', 'in_progress'])
     } else if (filter === 'pending') {
       setStatusFilter(['pending'])
+    } else if (filter === 'in_progress') {
+      setStatusFilter(['in_progress'])
+    }
+
+    if (status) {
+      if (status === 'overdue') {
+        setDateFilter('overdue')
+        setStatusFilter(['pending', 'in_progress'])
+      } else if (['pending', 'in_progress', 'completed'].includes(status)) {
+        setStatusFilter([status])
+      }
     }
   }, [searchParams])
 
