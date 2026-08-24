@@ -232,7 +232,7 @@ export default function CustomerDetails() {
       <Button
         variant="ghost"
         className="mb-2 -ml-4 text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/clientes')}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Voltar para a lista
