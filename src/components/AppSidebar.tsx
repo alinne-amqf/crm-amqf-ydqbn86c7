@@ -63,37 +63,87 @@ export function AppSidebar() {
           <span className="text-[16px] font-bold text-primary">CRM AMQF</span>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="space-y-2">
         <SidebarGroup>
+          <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Operação
+          </div>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.url
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.title}
-                      className={cn(
-                        'h-auto py-[12px] px-[16px] text-[14px] font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-primary cursor-pointer gap-[8px]',
-                        isActive &&
-                          'bg-[#E8F0FF] text-primary hover:bg-[#E8F0FF] hover:text-primary border-l-[3px] border-primary rounded-none',
-                      )}
-                    >
-                      <Link to={item.url} className="flex items-center gap-[8px] w-full">
-                        <item.icon
-                          className={cn(
-                            'h-[20px] w-[20px] shrink-0',
-                            isActive ? 'text-primary' : 'text-muted-foreground',
-                          )}
-                        />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+              {navItems
+                .filter((item) =>
+                  ['Dashboard', 'Clientes', 'Vendas', 'Tarefas'].includes(item.title),
                 )
-              })}
+                .map((item) => {
+                  const isActive =
+                    item.url === '/'
+                      ? location.pathname === '/'
+                      : location.pathname.startsWith(item.url) ||
+                        (item.url === '/clientes' && location.pathname.startsWith('/customer/'))
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={item.title}
+                        className={cn(
+                          'h-auto py-[12px] px-[16px] text-[14px] font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-primary cursor-pointer gap-[8px]',
+                          isActive &&
+                            'bg-[#E8F0FF] text-primary hover:bg-[#E8F0FF] hover:text-primary border-l-[3px] border-primary rounded-none',
+                        )}
+                      >
+                        <Link to={item.url} className="flex items-center gap-[8px] w-full">
+                          <item.icon
+                            className={cn(
+                              'h-[20px] w-[20px] shrink-0',
+                              isActive ? 'text-primary' : 'text-muted-foreground',
+                            )}
+                          />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Gestão
+          </div>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems
+                .filter((item) => ['Relatórios', 'Configurações'].includes(item.title))
+                .map((item) => {
+                  const isActive = location.pathname.startsWith(item.url)
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={item.title}
+                        className={cn(
+                          'h-auto py-[12px] px-[16px] text-[14px] font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-primary cursor-pointer gap-[8px]',
+                          isActive &&
+                            'bg-[#E8F0FF] text-primary hover:bg-[#E8F0FF] hover:text-primary border-l-[3px] border-primary rounded-none',
+                        )}
+                      >
+                        <Link to={item.url} className="flex items-center gap-[8px] w-full">
+                          <item.icon
+                            className={cn(
+                              'h-[20px] w-[20px] shrink-0',
+                              isActive ? 'text-primary' : 'text-muted-foreground',
+                            )}
+                          />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, ListTodo, TrendingUp, PieChartIcon, Users } from 'lucide-react'
+import {
+  Briefcase,
+  ListTodo,
+  TrendingUp,
+  PieChartIcon,
+  Users,
+  UserPlus,
+  PlusCircle,
+} from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -12,11 +20,27 @@ import {
   Cell,
   ResponsiveContainer,
 } from 'recharts'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 import { dashboardService } from '@/services/dashboard'
+import { createCustomer } from '@/services/customers'
+import { useAuth } from '@/hooks/use-auth'
+import { Customer } from '@/lib/types'
 import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { CustomerForm } from '@/components/CustomerForm'
+import { NewTaskModal } from '@/components/NewTaskModal'
+import { toast } from 'sonner'
 
 interface DashboardData {
   pipelineValue: number
@@ -28,22 +52,28 @@ interface DashboardData {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { profile } = useAuth()
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true)
-        const dashboardData = await dashboardService.getDashboardData()
-        setData(dashboardData)
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-      } finally {
-        setIsLoading(false)
-      }
+  // Modais de Ações Rápidas
+  const [isCustomerSheetOpen, setIsCustomerSheetOpen] = useState(false)
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true)
+      const dashboardData = await dashboardService.getDashboardData()
+      setData(dashboardData)
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setIsLoading(false)
     }
-    fetchData()
+  }
+
+  useEffect(() => {
+    loadData()
   }, [])
 
   const formatCurrency = (value: number) => {
@@ -53,10 +83,47 @@ export default function Dashboard() {
     }).format(value)
   }
 
+  // Saudação contextual
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour < 12) return 'Bom dia'
+    if (hour >= 12 && hour < 18) return 'Boa tarde'
+    return 'Boa noite'
+  }
+
+  const firstName = profile?.name ? profile.name.trim().split(' ')[0] : 'Usuário'
+  const currentDateFormatted = format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", {
+    locale: ptBR,
+  })
+  // Deixar a primeira letra da data em maiúsculo (ex: "Sexta-feira, 23 de maio...")
+  const capitalizedDate =
+    currentDateFormatted.charAt(0).toUpperCase() + currentDateFormatted.slice(1)
+
+  // Cálculo da taxa de conversão
+  const wonCount =
+    data?.conversionData.find((d) => d.name.toLowerCase().includes('ganho'))?.value || 0
+  const lostCount =
+    data?.conversionData.find((d) => d.name.toLowerCase().includes('perdido'))?.value || 0
+  const totalFinished = wonCount + lostCount
+  const conversionRate = totalFinished > 0 ? ((wonCount / totalFinished) * 100).toFixed(1) : '0.0'
+
+  const handleSaveCustomer = async (customerData: Omit<Customer, 'id' | 'createdAt'>) => {
+    try {
+      const created = await createCustomer(customerData)
+      toast.success('Cliente cadastrado com sucesso!', {
+        description: `${created.name} foi adicionado à base de clientes.`,
+      })
+      setIsCustomerSheetOpen(false)
+      loadData()
+    } catch (error: any) {
+      toast.error('Erro ao cadastrar cliente', { description: error.message })
+    }
+  }
+
   if (isLoading && !data) {
     return (
       <div className="w-full max-w-7xl mx-auto space-y-6 animate-pulse pb-10">
-        <div className="h-8 w-48 bg-muted rounded-md mb-6"></div>
+        <div className="h-10 w-72 bg-muted rounded-md mb-6"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Skeleton className="h-[120px] w-full rounded-lg" />
           <Skeleton className="h-[120px] w-full rounded-lg" />
@@ -83,12 +150,31 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-8 animate-fade-in-up pb-10">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground leading-tight">Dashboard Inteligente</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Acompanhe os principais indicadores de desempenho do seu CRM.
-        </p>
+    <div className="w-full max-w-7xl mx-auto space-y-6 animate-fade-in-up pb-10">
+      {/* Header Contextual + Barra de Ações Rápidas */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
+            {getGreeting()}, {firstName}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{capitalizedDate}</p>
+        </div>
+
+        {/* Barra de Ações Rápidas */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <Button
+            variant="outline"
+            className="bg-white border-border shadow-xs hover:border-primary/50 text-foreground"
+            onClick={() => setIsCustomerSheetOpen(true)}
+          >
+            <UserPlus className="mr-2 h-4 w-4 text-primary" />
+            Novo Cliente
+          </Button>
+          <Button className="shadow-sm" onClick={() => setIsTaskModalOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Nova Tarefa
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -222,15 +308,28 @@ export default function Dashboard() {
         </Card>
 
         <Card className="p-6 flex flex-col shadow-sm bg-white">
-          <div className="flex items-center gap-2 mb-6 border-b pb-4">
-            <PieChartIcon className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">Taxa de Conversão</h2>
+          <div className="flex items-center justify-between border-b pb-4 mb-4">
+            <div className="flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Taxa de Conversão</h2>
+            </div>
           </div>
-          <div className="flex-1 min-h-[300px]">
+
+          {/* Destaque do percentual calculado */}
+          <div className="flex flex-col items-center justify-center pt-2 pb-1">
+            <span className="text-4xl font-bold text-foreground tracking-tight">
+              {conversionRate}%
+            </span>
+            <span className="text-xs font-medium text-muted-foreground mt-0.5">
+              taxa de fechamento
+            </span>
+          </div>
+
+          <div className="flex-1 min-h-[260px]">
             {data?.conversionData && data.conversionData.some((d) => d.value > 0) ? (
               <ChartContainer
                 config={chartConfigConversion}
-                className="h-full w-full min-h-[300px]"
+                className="h-full w-full min-h-[260px]"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -238,8 +337,8 @@ export default function Dashboard() {
                       data={data.conversionData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={80}
-                      outerRadius={110}
+                      innerRadius={70}
+                      outerRadius={95}
                       paddingAngle={5}
                       dataKey="value"
                       onClick={(e) => {
@@ -316,6 +415,34 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Modal / Sheet de Cadastro de Novo Cliente */}
+      <Sheet
+        open={isCustomerSheetOpen}
+        onOpenChange={(open) => !open && setIsCustomerSheetOpen(false)}
+      >
+        <SheetContent className="w-full sm:max-w-md border-l overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-h2">Cadastrar Novo Cliente</SheetTitle>
+            <SheetDescription className="text-body">
+              Preencha os dados abaixo para adicionar um novo cliente ou lead à sua base.
+            </SheetDescription>
+          </SheetHeader>
+          <CustomerForm
+            onSubmit={handleSaveCustomer}
+            onCancel={() => setIsCustomerSheetOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Modal de Criação de Tarefa */}
+      <NewTaskModal
+        open={isTaskModalOpen}
+        onOpenChange={setIsTaskModalOpen}
+        onSuccess={() => {
+          loadData()
+        }}
+      />
     </div>
   )
 }
