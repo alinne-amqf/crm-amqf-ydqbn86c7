@@ -71,10 +71,11 @@ export const dashboardService = {
       statusCounts[status] = (statusCounts[status] || 0) + 1
     })
 
+    // Paleta sóbria e clássica: tons de ardósia, navy e neutros sofisticados
     const statusColors: Record<string, string> = {
-      Ativo: '#10b981',
-      Lead: '#6366f1',
-      Inativo: '#94a3b8',
+      Ativo: '#1e3a5f', // Navy profundo
+      Lead: '#475569', // Slate intermediário
+      Inativo: '#94a3b8', // Slate suave
     }
 
     const customersByStatus = Object.entries(statusCounts).map(([status, count]) => ({

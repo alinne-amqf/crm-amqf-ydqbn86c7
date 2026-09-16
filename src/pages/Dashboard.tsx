@@ -120,18 +120,47 @@ export default function Dashboard() {
     }
   }
 
+  // Paleta sóbria e clássica para os estágios do funil (gradiente de slate-800 até slate-400)
+  const funnelShades = ['#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1']
+
+  const styledFunnelData = data?.opportunitiesByStage?.map((item, index) => ({
+    ...item,
+    fill: funnelShades[index % funnelShades.length],
+  }))
+
+  // Taxa de conversão sóbria: navy discreto para Ganho e slate-300 para Perdido
+  const styledConversionData = data?.conversionData?.map((item) => {
+    const isWon = item.name.toLowerCase().includes('ganho')
+    return {
+      ...item,
+      fill: isWon ? '#1e3a5f' : '#cbd5e1', // Navy elegante vs Slate neutro claro
+    }
+  })
+
+  // Clientes por status: tons monocromáticos sóbrios
+  const statusColorMap: Record<string, string> = {
+    Ativo: '#1e3a5f',
+    Lead: '#475569',
+    Inativo: '#94a3b8',
+  }
+
+  const styledCustomersData = data?.customersByStatus?.map((item, index) => ({
+    ...item,
+    fill: statusColorMap[item.status] || funnelShades[index % funnelShades.length],
+  }))
+
   if (isLoading && !data) {
     return (
       <div className="w-full max-w-7xl mx-auto space-y-6 animate-pulse pb-10">
-        <div className="h-10 w-72 bg-muted rounded-md mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-[120px] w-full rounded-lg" />
-          <Skeleton className="h-[120px] w-full rounded-lg" />
+        <div className="h-8 w-72 bg-slate-200/80 rounded-md mb-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <Skeleton className="h-[136px] w-full rounded-lg bg-slate-200/60" />
+          <Skeleton className="h-[136px] w-full rounded-lg bg-slate-200/60" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          <Skeleton className="h-[350px] w-full rounded-lg" />
-          <Skeleton className="h-[350px] w-full rounded-lg" />
-          <Skeleton className="h-[350px] w-full rounded-lg" />
+          <Skeleton className="h-[360px] w-full rounded-lg bg-slate-200/60" />
+          <Skeleton className="h-[360px] w-full rounded-lg bg-slate-200/60" />
+          <Skeleton className="h-[360px] w-full rounded-lg bg-slate-200/60 lg:col-span-2" />
         </div>
       </div>
     )
@@ -150,59 +179,81 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 animate-fade-in-up pb-10">
+    <div className="w-full max-w-7xl mx-auto space-y-6 animate-fade-in pb-10">
       {/* Header Contextual + Barra de Ações Rápidas */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 leading-snug">
             {getGreeting()}, {firstName}
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">{capitalizedDate}</p>
+          <p className="text-xs sm:text-sm font-normal text-slate-500 mt-1">{capitalizedDate}</p>
         </div>
 
-        {/* Barra de Ações Rápidas */}
+        {/* Barra de Ações Rápidas em estilo sóbrio */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <Button
             variant="outline"
-            className="bg-white border-border shadow-xs hover:border-primary/50 text-foreground"
+            className="bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400 shadow-sm transition-colors text-xs sm:text-sm h-9 px-3.5"
             onClick={() => setIsCustomerSheetOpen(true)}
           >
-            <UserPlus className="mr-2 h-4 w-4 text-primary" />
+            <UserPlus className="mr-2 h-4 w-4 text-slate-500" />
             Novo Cliente
           </Button>
-          <Button className="shadow-sm" onClick={() => setIsTaskModalOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
+          <Button
+            className="bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition-colors text-xs sm:text-sm h-9 px-3.5"
+            onClick={() => setIsTaskModalOpen(true)}
+          >
+            <PlusCircle className="mr-2 h-4 w-4 text-slate-300" />
             Nova Tarefa
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-6 flex flex-col justify-center min-h-[140px] shadow-sm border-l-4 border-l-highlight bg-white">
-          <div className="flex items-center gap-2 mb-2">
-            <Briefcase className="h-5 w-5 text-highlight" />
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Valor no Pipeline
-            </h3>
+      {/* Cards de Métricas Principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Card Valor no Pipeline */}
+        <Card className="p-6 flex flex-col justify-between min-h-[140px] rounded-lg border border-slate-200/90 bg-white shadow-sm hover:border-slate-300 transition-colors">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-slate-700" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Valor no Pipeline
+              </h3>
+            </div>
+            <div className="p-1.5 rounded-md bg-slate-100 text-slate-600">
+              <Briefcase className="h-4 w-4" />
+            </div>
           </div>
-          <div className="text-4xl font-bold text-highlight">
-            {formatCurrency(data?.pipelineValue || 0)}
+          <div className="mt-1">
+            <div className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+              {formatCurrency(data?.pipelineValue || 0)}
+            </div>
+            <p className="text-xs text-slate-500 mt-1 font-normal">
+              Soma de todas as oportunidades ativas
+            </p>
           </div>
         </Card>
 
-        <Card className="p-6 flex flex-col justify-center min-h-[140px] shadow-sm border-l-4 border-l-action bg-white">
-          <div className="flex items-center gap-2 mb-4">
-            <ListTodo className="h-5 w-5 text-action" />
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Resumo de Tarefas
-            </h3>
+        {/* Card Resumo de Tarefas */}
+        <Card className="p-6 flex flex-col justify-between min-h-[140px] rounded-lg border border-slate-200/90 bg-white shadow-sm hover:border-slate-300 transition-colors">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-slate-700" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Resumo de Tarefas
+              </h3>
+            </div>
+            <div className="p-1.5 rounded-md bg-slate-100 text-slate-600">
+              <ListTodo className="h-4 w-4" />
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2.5 mt-1">
+            {/* A Fazer */}
             <div
               role="button"
               tabIndex={0}
               aria-label="Tarefas a fazer"
-              className="flex flex-col items-center justify-center p-3 rounded-lg bg-amber-50 border border-amber-200/60 cursor-pointer hover:bg-amber-100/80 transition-all hover:scale-[1.02] shadow-xs select-none"
+              className="flex flex-col items-center justify-center py-2.5 px-2 rounded-md bg-amber-50/70 border border-amber-200/70 cursor-pointer hover:bg-amber-100/60 transition-colors shadow-2xs select-none"
               onClick={() => navigate('/tarefas?status=pending')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -211,16 +262,20 @@ export default function Dashboard() {
                 }
               }}
             >
-              <span className="text-2xl font-bold text-amber-600">
+              <span className="text-xl sm:text-2xl font-bold text-amber-900">
                 {data?.tasksSummary?.pending ?? 0}
               </span>
-              <span className="text-xs text-amber-800 font-medium text-center">A fazer</span>
+              <span className="text-[11px] font-medium text-amber-800 text-center mt-0.5">
+                A fazer
+              </span>
             </div>
+
+            {/* Em Andamento */}
             <div
               role="button"
               tabIndex={0}
               aria-label="Tarefas em andamento"
-              className="flex flex-col items-center justify-center p-3 rounded-lg bg-blue-50 border border-blue-200/60 cursor-pointer hover:bg-blue-100/80 transition-all hover:scale-[1.02] shadow-xs select-none"
+              className="flex flex-col items-center justify-center py-2.5 px-2 rounded-md bg-slate-100/80 border border-slate-200 cursor-pointer hover:bg-slate-200/70 transition-colors shadow-2xs select-none"
               onClick={() => navigate('/tarefas?status=in_progress')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -229,16 +284,20 @@ export default function Dashboard() {
                 }
               }}
             >
-              <span className="text-2xl font-bold text-blue-600">
+              <span className="text-xl sm:text-2xl font-bold text-slate-800">
                 {data?.tasksSummary?.inProgress ?? 0}
               </span>
-              <span className="text-xs text-blue-800 font-medium text-center">Em andamento</span>
+              <span className="text-[11px] font-medium text-slate-700 text-center mt-0.5">
+                Em andamento
+              </span>
             </div>
+
+            {/* Atrasadas - Bordô suave e discreto */}
             <div
               role="button"
               tabIndex={0}
               aria-label="Tarefas atrasadas"
-              className="flex flex-col items-center justify-center p-3 rounded-lg bg-red-50 border border-red-200/60 cursor-pointer hover:bg-red-100/80 transition-all hover:scale-[1.02] shadow-xs select-none"
+              className="flex flex-col items-center justify-center py-2.5 px-2 rounded-md bg-rose-50/80 border border-rose-200/80 cursor-pointer hover:bg-rose-100/60 transition-colors shadow-2xs select-none"
               onClick={() => navigate('/tarefas?filter=overdue')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -247,27 +306,33 @@ export default function Dashboard() {
                 }
               }}
             >
-              <span className="text-2xl font-bold text-red-600">
+              <span className="text-xl sm:text-2xl font-bold text-rose-900">
                 {data?.tasksSummary?.overdue ?? 0}
               </span>
-              <span className="text-xs text-red-800 font-medium text-center">Atrasadas</span>
+              <span className="text-[11px] font-medium text-rose-800 text-center mt-0.5">
+                Atrasadas
+              </span>
             </div>
           </div>
         </Card>
       </div>
 
+      {/* Gráficos Recharts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 flex flex-col shadow-sm bg-white">
-          <div className="flex items-center gap-2 mb-6 border-b pb-4">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">Funil de Vendas</h2>
+        {/* Gráfico: Funil de Vendas */}
+        <Card className="p-6 flex flex-col rounded-lg border border-slate-200/90 bg-white shadow-sm">
+          <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+            <TrendingUp className="h-4 w-4 text-slate-600" />
+            <h2 className="text-base sm:text-lg font-semibold tracking-tight text-slate-900">
+              Funil de Vendas
+            </h2>
           </div>
           <div className="flex-1 min-h-[300px]">
-            {data?.opportunitiesByStage && data.opportunitiesByStage.length > 0 ? (
+            {styledFunnelData && styledFunnelData.length > 0 ? (
               <ChartContainer config={chartConfigFunnel} className="h-full w-full min-h-[300px]">
                 <BarChart
-                  data={data.opportunitiesByStage}
-                  margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+                  data={styledFunnelData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 24 }}
                   onClick={(e) => {
                     if (e && e.activePayload && e.activePayload.length > 0) {
                       navigate(`/vendas?stage=${e.activePayload[0].payload.stage}`)
@@ -275,12 +340,12 @@ export default function Dashboard() {
                   }}
                   className="cursor-pointer"
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8E8E8" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis
                     dataKey="stage"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#666666', fontSize: 11 }}
+                    tick={{ fill: '#64748b', fontSize: 11 }}
                     dy={10}
                     interval={0}
                     angle={-25}
@@ -289,57 +354,64 @@ export default function Dashboard() {
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#666666', fontSize: 12 }}
+                    tick={{ fill: '#64748b', fontSize: 12 }}
                     allowDecimals={false}
                   />
                   <ChartTooltip
-                    cursor={{ fill: '#F0F2F5' }}
-                    content={<ChartTooltipContent className="bg-white" />}
+                    cursor={{ fill: '#f8fafc' }}
+                    content={
+                      <ChartTooltipContent className="bg-white border-slate-200 text-slate-800 shadow-md" />
+                    }
                   />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={40} />
+                  <Bar dataKey="count" radius={[3, 3, 0, 0]} barSize={38}>
+                    {styledFunnelData.map((entry, index) => (
+                      <Cell key={`funnel-cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ChartContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="flex items-center justify-center h-full text-xs text-slate-400">
                 Sem dados de oportunidades.
               </div>
             )}
           </div>
         </Card>
 
-        <Card className="p-6 flex flex-col shadow-sm bg-white">
-          <div className="flex items-center justify-between border-b pb-4 mb-4">
+        {/* Gráfico: Taxa de Conversão */}
+        <Card className="p-6 flex flex-col rounded-lg border border-slate-200/90 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
             <div className="flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">Taxa de Conversão</h2>
+              <PieChartIcon className="h-4 w-4 text-slate-600" />
+              <h2 className="text-base sm:text-lg font-semibold tracking-tight text-slate-900">
+                Taxa de Conversão
+              </h2>
             </div>
           </div>
 
-          {/* Destaque do percentual calculado */}
-          <div className="flex flex-col items-center justify-center pt-2 pb-1">
-            <span className="text-4xl font-bold text-foreground tracking-tight">
+          {/* Destaque sóbrio do percentual calculado */}
+          <div className="flex flex-col items-center justify-center pt-1 pb-2">
+            <span className="text-4xl font-bold tracking-tight text-slate-900">
               {conversionRate}%
             </span>
-            <span className="text-xs font-medium text-muted-foreground mt-0.5">
-              taxa de fechamento
-            </span>
+            <span className="text-xs font-medium text-slate-500 mt-0.5">taxa de fechamento</span>
           </div>
 
-          <div className="flex-1 min-h-[260px]">
-            {data?.conversionData && data.conversionData.some((d) => d.value > 0) ? (
+          <div className="flex-1 min-h-[250px]">
+            {styledConversionData && styledConversionData.some((d) => d.value > 0) ? (
               <ChartContainer
                 config={chartConfigConversion}
-                className="h-full w-full min-h-[260px]"
+                className="h-full w-full min-h-[250px]"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={data.conversionData}
+                      data={styledConversionData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={70}
-                      outerRadius={95}
-                      paddingAngle={5}
+                      innerRadius={68}
+                      outerRadius={92}
+                      paddingAngle={3}
                       dataKey="value"
                       onClick={(e) => {
                         if (e && e.name) {
@@ -348,47 +420,54 @@ export default function Dashboard() {
                       }}
                       className="cursor-pointer"
                     >
-                      {data.conversionData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      {styledConversionData.map((entry, index) => (
+                        <Cell key={`conv-cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent className="bg-white border-slate-200 text-slate-800 shadow-md" />
+                      }
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </ChartContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="flex items-center justify-center h-full text-xs text-slate-400">
                 Sem dados de conversão.
               </div>
             )}
           </div>
-          <div className="flex justify-center gap-6 mt-2">
-            {data?.conversionData.map((d) => (
+          <div className="flex justify-center gap-6 mt-3 pt-3 border-t border-slate-100">
+            {styledConversionData?.map((d) => (
               <div key={d.name} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.fill }}></div>
-                <span className="text-sm font-medium">
-                  {d.name} ({d.value})
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.fill }} />
+                <span className="text-xs font-medium text-slate-600">
+                  {d.name} <span className="text-slate-400">({d.value})</span>
                 </span>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card className="p-6 flex flex-col shadow-sm bg-white lg:col-span-2">
-          <div className="flex items-center gap-2 mb-6 border-b pb-4">
-            <Users className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">Clientes por Status</h2>
+        {/* Gráfico: Clientes por Status */}
+        <Card className="p-6 flex flex-col rounded-lg border border-slate-200/90 bg-white shadow-sm lg:col-span-2">
+          <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+            <Users className="h-4 w-4 text-slate-600" />
+            <h2 className="text-base sm:text-lg font-semibold tracking-tight text-slate-900">
+              Clientes por Status
+            </h2>
           </div>
           <div className="flex-1 min-h-[300px]">
-            {data?.customersByStatus && data.customersByStatus.length > 0 ? (
+            {styledCustomersData && styledCustomersData.length > 0 ? (
               <ChartContainer config={chartConfigCustomers} className="h-full w-full min-h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={data.customersByStatus}
+                      data={styledCustomersData}
                       cx="50%"
                       cy="50%"
-                      outerRadius={110}
+                      outerRadius={105}
                       dataKey="count"
                       nameKey="status"
                       onClick={(e) => {
@@ -399,16 +478,20 @@ export default function Dashboard() {
                       className="cursor-pointer"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     >
-                      {data.customersByStatus.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      {styledCustomersData.map((entry, index) => (
+                        <Cell key={`cust-cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent className="bg-white border-slate-200 text-slate-800 shadow-md" />
+                      }
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </ChartContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="flex items-center justify-center h-full text-xs text-slate-400">
                 Sem dados de clientes.
               </div>
             )}
